@@ -3,6 +3,14 @@
     Replicating socket behavior from OCaml's Unix module
 *)
 
+Require Export String.
+Require Export Coq.Numbers.Cyclic.Int63.Sint63.
+
+Axiom file_descr : Type.
+Axiom inet_addr : Type.
+
+Definition port : Type := int.
+
 Inductive socket_domain : Type :=
 | PF_UNIX
 | PF_INET
@@ -13,3 +21,7 @@ Inductive socket_type : Type :=
 | SOCK_DGRAM
 | SOCK_RAW
 | SOCK_SEQPACKET.
+
+Inductive sockaddr : Type :=
+| ADDR_UNIX (s : string)
+| ADDR_INET (addr : inet_addr) (p : port).

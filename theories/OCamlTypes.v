@@ -7,11 +7,9 @@
 
 (** Strings *)
 Require Export Ascii String.
-Require Export ExtrOcamlString.
 
 (** OCaml Integers *)
 Require Export Coq.Numbers.Cyclic.Int63.Sint63.
-Require Export Coq.extraction.ExtrOCamlInt63.
 Require Export ZArith.
 
 (** Booleans *)
@@ -20,12 +18,13 @@ Require Export Bool.
 (** Miscellaneous *)
 Require Export Sockets.
 
-(** Types *)
-Axiom file_descr : Type.
-
 (** Functions *)
 Axiom read_line : unit -> string.
 Axiom print_string : string -> unit.
+Axiom print_int : int -> unit.
 Axiom print_endline : string -> unit.
 Axiom socket : socket_domain -> socket_type -> int -> file_descr.
 Axiom sleep : int -> unit.
+Axiom inet_addr_of_string : string -> inet_addr.
+Axiom string_of_inet_addr : inet_addr -> string.
+Axiom getsockname : file_descr -> sockaddr.

@@ -33,6 +33,17 @@
 <div class="code">
 
 <br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#"><span class="id" title="library">String</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Numbers.Cyclic.Int63.Sint63.html#"><span class="id" title="library">Coq.Numbers.Cyclic.Int63.Sint63</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Axiom</span> <a id="file_descr" class="idref" href="#file_descr"><span class="id" title="axiom">file_descr</span></a> : <span class="id" title="keyword">Type</span>.<br/>
+<span class="id" title="keyword">Axiom</span> <a id="inet_addr" class="idref" href="#inet_addr"><span class="id" title="axiom">inet_addr</span></a> : <span class="id" title="keyword">Type</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="port" class="idref" href="#port"><span class="id" title="definition">port</span></a> : <span class="id" title="keyword">Type</span> := <span class="id" title="var">int</span>.<br/>
+
+<br/>
 <span class="id" title="keyword">Inductive</span> <a id="socket_domain" class="idref" href="#socket_domain"><span class="id" title="definition, inductive"><span id="socket_domain_rect" class="id"><span id="socket_domain_ind" class="id"><span id="socket_domain_rec" class="id"><span id="socket_domain_sind" class="id">socket_domain</span></span></span></span></span></a> : <span class="id" title="keyword">Type</span> :=<br/>
 | <a id="PF_UNIX" class="idref" href="#PF_UNIX"><span class="id" title="constructor">PF_UNIX</span></a><br/>
 | <a id="PF_INET" class="idref" href="#PF_INET"><span class="id" title="constructor">PF_INET</span></a><br/>
@@ -44,6 +55,11 @@
 | <a id="SOCK_DGRAM" class="idref" href="#SOCK_DGRAM"><span class="id" title="constructor">SOCK_DGRAM</span></a><br/>
 | <a id="SOCK_RAW" class="idref" href="#SOCK_RAW"><span class="id" title="constructor">SOCK_RAW</span></a><br/>
 | <a id="SOCK_SEQPACKET" class="idref" href="#SOCK_SEQPACKET"><span class="id" title="constructor">SOCK_SEQPACKET</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <a id="sockaddr" class="idref" href="#sockaddr"><span class="id" title="definition, inductive"><span id="sockaddr_rect" class="id"><span id="sockaddr_ind" class="id"><span id="sockaddr_rec" class="id"><span id="sockaddr_sind" class="id">sockaddr</span></span></span></span></span></a> : <span class="id" title="keyword">Type</span> :=<br/>
+| <a id="ADDR_UNIX" class="idref" href="#ADDR_UNIX"><span class="id" title="constructor">ADDR_UNIX</span></a> (<a id="s:9" class="idref" href="#s:9"><span class="id" title="binder">s</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>)<br/>
+| <a id="ADDR_INET" class="idref" href="#ADDR_INET"><span class="id" title="constructor">ADDR_INET</span></a> (<a id="addr:10" class="idref" href="#addr:10"><span class="id" title="binder">addr</span></a> : <a class="idref" href="Proofchat.theories.Sockets.html#inet_addr"><span class="id" title="axiom">inet_addr</span></a>) (<a id="p:11" class="idref" href="#p:11"><span class="id" title="binder">p</span></a> : <a class="idref" href="Proofchat.theories.Sockets.html#port"><span class="id" title="definition">port</span></a>).<br/>
 </div>
 </div>
 

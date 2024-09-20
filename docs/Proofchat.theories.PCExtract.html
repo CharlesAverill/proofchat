@@ -1,0 +1,101 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Proofchat.theories.PCExtract</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Proofchat.theories.PCExtract</h1>
+
+<div class="code">
+</div>
+
+<div class="doc">
+<a id="lab4"></a><h1 class="section">Extraction</h1>
+
+
+<div class="paragraph"> </div>
+
+    Where everything is extracted to OCaml
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="library">Extraction</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.Client.html#"><span class="id" title="library">Client</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.OCamlTypes.html#"><span class="id" title="library">OCamlTypes</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.Monads.html#"><span class="id" title="library">Monads</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.Sockets.html#"><span class="id" title="library">Sockets</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.extraction.ExtrOcamlBasic.html#"><span class="id" title="library">ExtrOcamlBasic</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.extraction.ExtrOcamlNativeString.html#"><span class="id" title="library">ExtrOcamlNativeString</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.extraction.ExtrOCamlInt63.html#"><span class="id" title="library">ExtrOCamlInt63</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Extraction</span> <span class="id" title="var">Language</span> <span class="id" title="var">OCaml</span>.<br/>
+<span class="id" title="keyword">Set</span> <span class="id" title="keyword">Extraction</span> <span class="id" title="var">Output</span> <span class="id" title="var">Directory</span> "proofchat/bin".<br/>
+<span class="id" title="keyword">Unset</span> <span class="id" title="keyword">Extraction</span> <span class="id" title="var">Optimize</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="print_intdd" class="idref" href="#print_intdd"><span class="id" title="definition">print_intdd</span></a> := <a class="idref" href="Proofchat.theories.OCamlTypes.html#print_int"><span class="id" title="axiom">print_int</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">read_line</span> ⇒ "read_line".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_int</span> ⇒ "print_int".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_string</span> ⇒ "(fun s -&gt; print_string s; flush stdout)".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_endline</span> ⇒ "(fun s -&gt; print_endline s; flush stdout)".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">socket</span> ⇒ "Unix.socket".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">sleep</span> ⇒ "Unix.sleep".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">inet_addr_of_string</span> ⇒ "Unix.inet_addr_of_string".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">string_of_inet_addr</span> ⇒ "Unix.string_of_inet_addr".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">getsockname</span> ⇒ "Unix.getsockname".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">inet_addr</span> ⇒ "Unix.inet_addr".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">file_descr</span> ⇒ "Unix.file_descr".<br/>
+
+<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">keep</span> ⇒ "(fun x y -&gt; x; y)".<br/>
+
+<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">port</span> ⇒ "int".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="keyword">Inductive</span> <a class="idref" href="Proofchat.theories.Sockets.html#socket_domain"><span class="id" title="inductive">socket_domain</span></a> ⇒ <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;"Unix.socket_domain" [ "Unix.PF_UNIX" "Unix.PF_INET" "Unix.PF_INET6" ].<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="keyword">Inductive</span> <a class="idref" href="Proofchat.theories.Sockets.html#socket_type"><span class="id" title="inductive">socket_type</span></a> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;"Unix.socket_type" [ "Unix.SOCK_STREAM" "Unix.SOCK_DGRAM" "Unix.SOCK_RAW" "Unix.SOCK_SEQPACKET" ].<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="keyword">Inductive</span> <a class="idref" href="Proofchat.theories.Sockets.html#sockaddr"><span class="id" title="inductive">sockaddr</span></a> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;"Unix.sockaddr" [ "Unix.ADDR_UNIX" "Unix.ADDR_INET" ].<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="x" class="idref" href="#x"><span class="id" title="definition">x</span></a> : <span class="id" title="var">int</span> := 0.<br/>
+<span class="id" title="keyword">Extraction</span> <span class="id" title="var">x</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="sequence" class="idref" href="#sequence"><span class="id" title="definition">sequence</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">_</span> := <a class="idref" href="Proofchat.theories.PCExtract.html#print_intdd"><span class="id" title="definition">print_intdd</span></a> 5 <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.PCExtract.html#print_intdd"><span class="id" title="definition">print_intdd</span></a> 6.<br/>
+<span class="id" title="keyword">Extraction</span> <span class="id" title="var">sequence</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Recursive Extraction</span> <span class="id" title="var">client</span>.<br/>
+<span class="id" title="keyword">Extraction</span> "client.ml" <span class="id" title="var">client</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

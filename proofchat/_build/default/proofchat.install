@@ -1,0 +1,8 @@
+lib: [
+  "_build/install/default/lib/proofchat/META"
+  "_build/install/default/lib/proofchat/dune-package"
+  "_build/install/default/lib/proofchat/opam"
+]
+bin: [
+  "_build/install/default/bin/proofchat"
+]

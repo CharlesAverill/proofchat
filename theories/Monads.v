@@ -17,3 +17,7 @@ Notation " 'return' e "
   := (SomeE e) (at level 60) : monad_scope.
 Notation " 'fail' s "
   := (NoneE s) (at level 60) : monad_scope.
+
+Definition keep {Y : Type} (x : unit) (y : Y) : Y :=
+  let hello := x in y.
+Notation " x #; y " := (keep x y) (at level 60) : monad_scope.

@@ -36,7 +36,6 @@ OCaml Types
 </div>
 <div class="code">
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.Ascii.html#"><span class="id" title="library">Ascii</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#"><span class="id" title="library">String</span></a>.<br/>
-<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.extraction.ExtrOcamlString.html#"><span class="id" title="library">ExtrOcamlString</span></a>.<br/>
 
 <br/>
 </div>
@@ -46,7 +45,6 @@ OCaml Integers
 </div>
 <div class="code">
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Numbers.Cyclic.Int63.Sint63.html#"><span class="id" title="library">Coq.Numbers.Cyclic.Int63.Sint63</span></a>.<br/>
-<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.extraction.ExtrOCamlInt63.html#"><span class="id" title="library">Coq.extraction.ExtrOCamlInt63</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.ZArith.ZArith.html#"><span class="id" title="library">ZArith</span></a>.<br/>
 
 <br/>
@@ -71,23 +69,18 @@ Miscellaneous
 </div>
 
 <div class="doc">
-Types 
-</div>
-<div class="code">
-<span class="id" title="keyword">Axiom</span> <a id="file_descr" class="idref" href="#file_descr"><span class="id" title="axiom">file_descr</span></a> : <span class="id" title="keyword">Type</span>.<br/>
-
-<br/>
-</div>
-
-<div class="doc">
 Functions 
 </div>
 <div class="code">
 <span class="id" title="keyword">Axiom</span> <a id="read_line" class="idref" href="#read_line"><span class="id" title="axiom">read_line</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>.<br/>
 <span class="id" title="keyword">Axiom</span> <a id="print_string" class="idref" href="#print_string"><span class="id" title="axiom">print_string</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a>.<br/>
+<span class="id" title="keyword">Axiom</span> <a id="print_int" class="idref" href="#print_int"><span class="id" title="axiom">print_int</span></a> : <span class="id" title="var">int</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a>.<br/>
 <span class="id" title="keyword">Axiom</span> <a id="print_endline" class="idref" href="#print_endline"><span class="id" title="axiom">print_endline</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a>.<br/>
-<span class="id" title="keyword">Axiom</span> <a id="socket" class="idref" href="#socket"><span class="id" title="axiom">socket</span></a> : <a class="idref" href="Proofchat.theories.Sockets.html#socket_domain"><span class="id" title="inductive">socket_domain</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="Proofchat.theories.Sockets.html#socket_type"><span class="id" title="inductive">socket_type</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <span class="id" title="var">int</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="Proofchat.theories.OCamlTypes.html#file_descr"><span class="id" title="axiom">file_descr</span></a>.<br/>
+<span class="id" title="keyword">Axiom</span> <a id="socket" class="idref" href="#socket"><span class="id" title="axiom">socket</span></a> : <a class="idref" href="Proofchat.theories.Sockets.html#socket_domain"><span class="id" title="inductive">socket_domain</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="Proofchat.theories.Sockets.html#socket_type"><span class="id" title="inductive">socket_type</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <span class="id" title="var">int</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="Proofchat.theories.Sockets.html#file_descr"><span class="id" title="axiom">file_descr</span></a>.<br/>
 <span class="id" title="keyword">Axiom</span> <a id="sleep" class="idref" href="#sleep"><span class="id" title="axiom">sleep</span></a> : <span class="id" title="var">int</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a>.<br/>
+<span class="id" title="keyword">Axiom</span> <a id="inet_addr_of_string" class="idref" href="#inet_addr_of_string"><span class="id" title="axiom">inet_addr_of_string</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="Proofchat.theories.Sockets.html#inet_addr"><span class="id" title="axiom">inet_addr</span></a>.<br/>
+<span class="id" title="keyword">Axiom</span> <a id="string_of_inet_addr" class="idref" href="#string_of_inet_addr"><span class="id" title="axiom">string_of_inet_addr</span></a> : <a class="idref" href="Proofchat.theories.Sockets.html#inet_addr"><span class="id" title="axiom">inet_addr</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>.<br/>
+<span class="id" title="keyword">Axiom</span> <a id="getsockname" class="idref" href="#getsockname"><span class="id" title="axiom">getsockname</span></a> : <a class="idref" href="Proofchat.theories.Sockets.html#file_descr"><span class="id" title="axiom">file_descr</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="Proofchat.theories.Sockets.html#sockaddr"><span class="id" title="inductive">sockaddr</span></a>.<br/>
 </div>
 </div>
 
