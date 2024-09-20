@@ -1,0 +1,40 @@
+# This file was generated from `meta.yml`, please do not edit manually.
+# Follow the instructions on https://github.com/coq-community/templates to regenerate.
+
+{{# extracted }}
+opam-version: "2.0"
+maintainer: "{{& opam-file-maintainer }}{{^ opam-file-maintainer }}palmskog@gmail.com{{/ opam-file-maintainer }}"
+
+homepage: "https://github.com/{{ organization }}/{{ shortname }}"
+dev-repo: "git+https://github.com/{{ organization }}/{{ shortname }}.git"
+bug-reports: "https://github.com/{{ organization }}/{{ shortname }}/issues"
+{{# license }}license: "{{ identifier }}"{{/ license }}
+
+synopsis: "{{& extracted_synopsis }}"
+description: """
+{{& extracted_description }}"""
+
+build: [make "-j%{jobs}%" "{{& extracted_make_target }}"]
+depends: [
+{{# extracted_supported_ocaml_versions }}
+  "ocaml" {{& opam }}
+{{/ extracted_supported_ocaml_versions }}
+  "coq" {{& supported_coq_versions.opam }}
+{{# dependencies }}
+{{# opam }}
+  "{{ name }}" {{& version }}
+{{/ opam }}
+{{/ dependencies }}
+{{# extracted_dependencies }}
+{{# opam }}
+  "{{ name }}" {{& version }}
+{{/ opam }}
+{{/ extracted_dependencies }}
+]
+
+authors: [
+{{# authors }}
+  "{{& name }}{{# email }} <{{& email }}>{{/ email }}"
+{{/ authors }}
+]
+{{/ extracted }}

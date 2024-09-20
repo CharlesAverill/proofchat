@@ -1,0 +1,153 @@
+<!---
+This file was generated from `meta.yml`, please do not edit manually.
+Follow the instructions on https://github.com/coq-community/templates to regenerate.
+--->
+# {{& fullname }}
+
+{{# travis }}
+[![Travis][travis-shield]][travis-link]
+{{/ travis }}
+{{# action }}
+[![Docker CI][docker-action-shield]][docker-action-link]
+{{# nix }}
+[![Nix CI][nix-action-shield]][nix-action-link]
+{{/ nix }}
+{{/ action }}
+{{# chat }}
+[![Chat][chat-shield]][chat-link]
+{{/ chat }}
+{{# circleci }}
+[![CircleCI][circleci-shield]][circleci-link]
+{{/ circleci }}
+{{# community }}
+[![Contributing][contributing-shield]][contributing-link]
+[![Code of Conduct][conduct-shield]][conduct-link]
+[![Zulip][zulip-shield]][zulip-link]
+{{/ community }}
+{{# coqdoc }}
+[![coqdoc][coqdoc-shield]][coqdoc-link]
+{{/ coqdoc }}
+{{# doi }}
+[![DOI][doi-shield]][doi-link]
+{{/ doi }}
+
+{{# travis }}
+[travis-shield]: https://travis-ci.com/{{ organization }}/{{ shortname }}.svg?branch={{branch}}{{^branch}}master{{/branch}}
+[travis-link]: https://travis-ci.com/{{ organization }}/{{ shortname }}/builds
+{{/ travis }}
+{{# action }}
+[docker-action-shield]: https://github.com/{{ organization }}/{{ shortname }}/actions/workflows/docker-action.yml/badge.svg?branch={{branch}}{{^branch}}master{{/branch}}
+[docker-action-link]: https://github.com/{{ organization }}/{{ shortname }}/actions/workflows/docker-action.yml
+{{# nix }}
+
+[nix-action-shield]: https://github.com/{{ organization }}/{{ shortname }}/actions/workflows/nix-action.yml/badge.svg?branch={{branch}}{{^branch}}master{{/branch}}
+[nix-action-link]: https://github.com/{{ organization }}/{{ shortname }}/actions/workflows/nix-action.yml
+{{/ nix }}
+{{/ action }}
+{{# chat }}
+[chat-shield]: https://img.shields.io/badge/{{ shield }}-join_chat-brightgreen.svg
+[chat-link]: {{ url }}
+{{/ chat }}
+{{# circleci }}
+[circleci-shield]: https://circleci.com/gh/{{ organization }}/{{ shortname }}.svg?style=svg
+[circleci-link]:   https://circleci.com/gh/{{ organization }}/{{ shortname }}
+{{/ circleci }}
+
+{{# community }}
+[contributing-shield]: https://img.shields.io/badge/contributions-welcome-%23f7931e.svg
+[contributing-link]: https://github.com/coq-community/manifesto/blob/master/CONTRIBUTING.md
+
+[conduct-shield]: https://img.shields.io/badge/%E2%9D%A4-code%20of%20conduct-%23f15a24.svg
+[conduct-link]: https://github.com/coq-community/manifesto/blob/master/CODE_OF_CONDUCT.md
+
+[zulip-shield]: https://img.shields.io/badge/chat-on%20zulip-%23c1272d.svg
+[zulip-link]: https://coq.zulipchat.com/#narrow/stream/237663-coq-community-devs.20.26.20users
+{{/ community }}
+
+{{# coqdoc }}
+[coqdoc-shield]: https://img.shields.io/badge/docs-coqdoc-blue.svg
+[coqdoc-link]: https://{{# community }}coq-community.org{{/ community }}{{^ community }}{{ organization }}.github.io{{/ community }}/{{ shortname }}{{# coqdoc_index }}/{{ coqdoc_index }}{{/coqdoc_index}}
+{{/ coqdoc }}
+
+{{# doi }}
+[doi-shield]: https://zenodo.org/badge/DOI/{{ doi }}.svg
+[doi-link]: https://doi.org/{{ doi }}
+{{/ doi }}
+
+{{& description }}
+
+## Meta
+
+- Author(s):
+{{# authors }}
+  - {{& name }}{{# orcid }} [<img src="https://zenodo.org/static/images/orcid.svg" height="14px" alt="ORCID logo" />](https://orcid.org/{{ orcid }}){{/ orcid }}{{# initial }} (initial){{/ initial }}
+{{/ authors }}
+{{& after_authors }}{{# community }}- Coq-community maintainer(s):
+{{# maintainers }}
+  - {{& name }} ([**@{{ nickname }}**](https://github.com/{{ nickname }}))
+{{/ maintainers }}
+{{/ community }}
+{{# license }}
+- License: [{{& fullname }}]({{ file }}{{^ file }}LICENSE{{/ file }})
+{{/ license }}
+{{# supported_coq_versions }}
+- Compatible Coq versions: {{& text }}
+{{/ supported_coq_versions }}
+{{# supported_ocaml_versions }}
+- Compatible OCaml versions: {{& text }}
+{{/ supported_ocaml_versions }}
+- Additional dependencies:{{# dependencies }}
+  - {{& description }}{{/ dependencies }}{{^ dependencies }}{{^ dune }} none{{/ dune }}{{/ dependencies }}{{# dune }}
+  - [Dune](https://dune.build) 2.5 or later{{/ dune }}
+{{# namespace }}
+- Coq namespace: `{{ namespace }}`
+{{/ namespace }}
+- Related publication(s):{{# publications }}
+  - [{{& pub_title }}]({{ pub_url }}) {{# pub_doi }}doi:[{{ pub_doi }}](https://doi.org/{{ pub_doi }}){{/ pub_doi}}{{/ publications }}{{^ publications }} none{{/ publications }}
+
+{{& build }}{{^ build }}## Building and installation instructions
+
+The easiest way to install the latest released version of {{& fullname }}
+is via [OPAM](https://opam.ocaml.org/doc/Install.html):
+
+```shell
+opam repo add coq-released https://coq.inria.fr/opam/released
+opam install {{ opam_name }}{{^ opam_name }}coq-{{ shortname }}{{/ opam_name }}
+```
+
+To instead build and install manually, do:
+
+``` shell
+git clone {{# submodule }}--recurse-submodules {{/ submodule }}https://github.com/{{ organization }}/{{ shortname }}.git
+cd {{ shortname }}
+{{# dune }}
+dune build
+dune install
+{{/ dune}}
+{{^ dune }}
+make {{ make_target }}  # or make -j <number-of-cores-on-your-machine> {{ make_target }}
+make install
+{{/ dune }}
+```
+{{/ build }}
+
+{{# extracted }}
+## {{& extracted_fullname }}
+
+{{& extracted_description}}
+
+{{# extracted_supported_ocaml_versions }}
+- Compatible OCaml versions: {{& text }}
+{{/ extracted_supported_ocaml_versions }}
+- Additional dependencies:{{# extracted_dependencies }}
+  - {{& description }} {{/ extracted_dependencies }}{{^ extracted_dependencies }} none{{/ extracted_dependencies }}
+
+{{& extracted_build }}{{^ extracted_build }}### Building
+To extract the code and compile manually, use the following command:
+```
+make {{& extracted_make_target }}
+```
+{{/ extracted_build }}
+{{/ extracted }}
+
+{{& documentation }}
