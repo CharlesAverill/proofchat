@@ -28,3 +28,16 @@ Definition space : ascii := ascii_of_nat 32.
 Goal String space EmptyString = " ".
     reflexivity.
 Qed.
+
+(**
+    Returns [true] if [s] contains no space characters
+*)
+Fixpoint no_spaces (s : string) : bool :=
+    match s with
+    | EmptyString => true
+    | String a s' =>
+        if (ascii_dec a space) then
+            false
+        else
+            no_spaces s'
+    end.

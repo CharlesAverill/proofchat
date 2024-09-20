@@ -1,4 +1,8 @@
 -R . Proofchat
 -docroot docs
+theories/Sockets.v
+theories/OCamlTypes.v
 theories/StringTheory.v
+theories/Monads.v
 theories/Messages.v
+theories/Client.v

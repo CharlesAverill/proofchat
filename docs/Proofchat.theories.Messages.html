@@ -66,6 +66,11 @@
     Returns <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a></span> if
 <ul class="doclist">
 <li> The length of <span class="inlinecode"><span class="id" title="var">name</span></span> is in 
+        <math>
+            <mo>
+                [</mo><mn>1</mn><mo>&#x22ef;</mo><mn>32</mn><mo>]
+            </mo>
+        </math>
 
 </li>
 <li> <span class="inlinecode"><span class="id" title="var">name</span></span> contains no spaces
@@ -142,6 +147,73 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|}).<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">exact</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a>.<br/>
 <span class="id" title="keyword">Defined</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+    The message types sent by the client to the server
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Inductive</span> <a id="client_message" class="idref" href="#client_message"><span class="id" title="definition, inductive"><span id="client_message_rect" class="id"><span id="client_message_ind" class="id"><span id="client_message_rec" class="id"><span id="client_message_sind" class="id">client_message</span></span></span></span></span></a> : <span class="id" title="keyword">Type</span> :=<br/>
+</div>
+
+<div class="doc">
+    Purpose: Register new user "name" with the chat server.
+
+<div class="paragraph"> </div>
+
+    Server Response: <span class="inlinecode"><span class="id" title="var">ACK</span></span> with number of users and list
+        of users. Send message to all other
+        users that "name" has joined chat.
+
+</div>
+<div class="code">
+| <a id="REG" class="idref" href="#REG"><span class="id" title="constructor">REG</span></a>   (<a id="name:15" class="idref" href="#name:15"><span class="id" title="binder">name</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>)<br/>
+</div>
+
+<div class="doc">
+    Purpose: Send broadcast "message" to the entire chatroom.
+
+<div class="paragraph"> </div>
+
+    Server Response: Send "message" to all users in
+        chatroom except sender. Include
+        username of sender.
+
+</div>
+<div class="code">
+| <a id="MESG" class="idref" href="#MESG"><span class="id" title="constructor">MESG</span></a>  (<a id="message:16" class="idref" href="#message:16"><span class="id" title="binder">message</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>)<br/>
+</div>
+
+<div class="doc">
+    Purpose: Send private "message" to "user".
+
+<div class="paragraph"> </div>
+
+    Server Response: Send "message" to "user". Include
+        username of sender.
+
+</div>
+<div class="code">
+| <a id="PMSG" class="idref" href="#PMSG"><span class="id" title="constructor">PMSG</span></a>  (<a id="message:17" class="idref" href="#message:17"><span class="id" title="binder">message</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>) (<a id="target:18" class="idref" href="#target:18"><span class="id" title="binder">target</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>)<br/>
+</div>
+
+<div class="doc">
+    Purpose: Inform that "name" is leaving chat.
+
+<div class="paragraph"> </div>
+
+    Server Response: De-register "name". <span class="inlinecode"><span class="id" title="var">ACK</span></span> with
+        updated number of users and list of
+        remaining users. Send message to
+        remaining users that "name" has
+        left chat.
+
+</div>
+<div class="code">
+| <a id="EXIT" class="idref" href="#EXIT"><span class="id" title="constructor">EXIT</span></a>  (<a id="name:19" class="idref" href="#name:19"><span class="id" title="binder">name</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>).<br/>
 </div>
 </div>
 
