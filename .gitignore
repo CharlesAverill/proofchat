@@ -2,3 +2,4 @@
 *.aux
 *.glob
 *.vo*
+.lia.cache
