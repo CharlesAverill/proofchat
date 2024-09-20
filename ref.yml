@@ -1,0 +1,536 @@
+---
+fields:
+  - fullname:
+      required: true
+      description: >
+        Possibly space separated and capitalized name.
+      used:
+        - README.md
+        - index.md
+  - shortname:
+      required: true
+      description: >
+        The name of the repository.  Will also be used to build the
+        name of the opam file, unless opam_name is provided.
+      used:
+        - README.md
+        - index.md
+        - coq.opam
+        - extracted.opam
+        - config.yml
+        - dune
+        - dune-project
+  - branch:
+      required: false
+      description: >
+        The name of the branch of reference to consider to get the latest
+        version of the software. It will also be used for the CI badges.
+        If omitted, default value is “master”.
+        use:
+          - README.md
+          - docker-action.yml
+          - nix-action.yml
+  - opam_name:
+      required: false
+      default: coq-{{ shortname }}
+      used:
+        - README.md
+        - .travis.yml
+        - docker-action.yml
+        - dune-project
+        - dune
+  - organization:
+      required: true
+      used:
+        - README.md
+        - index.md
+        - coq.opam
+        - extracted.opam
+  - travis:
+      type: bool
+      used:
+        - README.md
+  - action:
+      type: bool
+      description: >
+        Set to true to use the GitHub Action template.
+      used:
+        - README.md
+  - circleci:
+      type: bool
+      used:
+        - README.md
+  - nix:
+      type: bool
+      description: >
+        Set to true to generate Nix-based CI configuration. For now,
+        this is only supported if either:
+        - the project is already available in nixpkgs under shortname
+          (same casing) and the build instructions and dependencies
+          have not changed;
+        - or, the project has no extra dependencies and builds with
+          the standard mechanism (coq_makefile with a _CoqProject
+          file).
+      used:
+        - README.md
+        - .travis.yml
+  - ci_test_dependants:
+      type: bool
+      used:
+        - config.yml
+        - .travis.yml
+        - docker-action.yml
+  - ci_extra_dev:
+      type: bool
+      description: >
+        Set to true to use opam packages from the extra-dev repository.
+      used:
+        - docker-action.yml
+        - config.yml
+        - .travis.yml
+  - action_appendix:
+      description: Append configurations to the GitHub Action.
+      example: |2-
+            export: 'OPAMWITHTEST'
+          env:
+            OPAMWITHTEST: true
+  - community:
+      type: bool
+      description: >
+        Set to true if the project is part of coq-community.
+      used:
+        - README.md
+        - index.md
+  - coqdoc:
+      type: bool
+      used:
+        - README.md
+        - coq.opam
+  - submodule:
+      type: bool
+      used:
+        - README.md
+        - config.yml
+        - docker-action.yml
+        - nix-action.yml
+  - dune:
+      type: bool
+      used:
+        - README.md
+        - coq.opam
+  - doi:
+      required: false
+      used:
+        - README.md
+  - synopsis:
+      required: true
+      used:
+        - coq.opam
+        - dune
+  - description:
+      required: true
+      used:
+        - README.md
+        - index.md
+        - coq.opam
+  - chat:
+      description: >
+        Adds a badge with a link to a chat room.
+      required: false
+      used:
+        - README.md
+      item_fields:
+        - url:
+            required: true
+        - shield:
+            description: >
+              Name of the chat to be displayed in the shield icon.
+            default: ""
+            examples: zulip, matrix, discourse
+  - authors:
+      required: true
+      type: list
+      item_fields:
+        - name:
+            required: true
+            used:
+              - README.md
+              - index.md
+              - coq.opam
+              - extracted.opam
+        - initial:
+            type: bool
+            description: >
+              Initial authors are highlighted as such in the README.
+              This is especially relevant for coq-community projects.
+            used:
+              - README.md
+              - index.md
+        - email:
+            required: false
+            used:
+              - coq.opam
+              - extracted.opam
+        - orcid:
+            required: false
+            used:
+              - README.md
+              - index.md
+  - after_authors:
+      required: false
+      used:
+        - README.md
+        - index.md
+  - maintainers:
+      type: list
+      item_fields:
+        - name:
+            required: true
+        - nickname:
+            required: true
+      used:
+        - README.md
+      caveats:
+        - Required if `community` is true.
+  - license:
+      required: false
+      fields:
+        - fullname:
+            required: true
+            used:
+              - README.md
+              - index.md
+        - identifier:
+            required: true
+            description: >
+              Should be an SPDX identifier.
+              List available at: https://spdx.org/licenses/
+            used:
+              - coq.opam
+              - extracted.opam
+        - file:
+            required: false
+            default: LICENSE
+            used:
+              - README.md
+              - index.md
+  - supported_coq_versions:
+      required: false
+      fields:
+        - text:
+            required: true
+            used:
+              - README.md
+        - opam:
+            required: false
+            description: >
+              Version formula including curly brackets:
+              https://opam.ocaml.org/doc/Manual.html#Common-file-format
+              Quote the string, otherwise confuse the parser.
+            examples:
+              - '{ >= "8.10" }'
+            used:
+              - coq.opam
+              - extracted.opam
+  - supported_ocaml_versions:
+      required: false
+      fields:
+        - text:
+            required: true
+            used:
+              - README.md
+        - opam:
+            required: true
+            used:
+              - coq.opam
+  - dependencies:
+      type: list
+      item_fields:
+        - description:
+            required: true
+            used:
+              - README.md
+        - opam:
+            required: false
+            fields:
+              - name:
+                  required: true
+              - version
+            used:
+              - coq.opam
+              - extracted.opam
+  - categories:
+      required: false
+      fields:
+        - name:
+            required: true
+      used:
+        - coq.opam
+  - keywords:
+      required: false
+      fields:
+        - name:
+            required: true
+      used:
+        - coq.opam
+  - date:
+      required: false
+      description: >
+        This can be used to regenerate an opam file with a release
+        date, for inclusion in the opam-coq-archive.
+      used:
+        - coq.opam
+  - namespace:
+      required: false
+      used:
+        - README.md
+        - coq.opam
+        - dune
+  - publications:
+      type: list
+      item_fields:
+        - pub_title:
+            required: true
+        - pub_url:
+            required: true
+        - pub_doi:
+            required: false
+      used:
+        - README.md
+        - index.md
+  - build:
+      required: false
+      description: >
+        The installation and build instructions, if the default ones
+        do not suit your project.
+      used:
+        - README.md
+  - make_target:
+      required: false
+      used:
+        - README.md
+        - coq.opam
+  - test_target:
+      required: false
+      used:
+        - coq.opam
+  - install_flag:
+      required: false
+      used:
+        - coq.opam
+  - extracted:
+      required: false
+      fields:
+        - extracted_fullname:
+            required: true
+            used:
+              - README.md
+        - extracted_shortname:
+            required: true
+            used:
+              - README.md
+              - .travis.yml
+        - extracted_synopsis:
+            required: true
+            used:
+              - README.md
+              - extracted.opam
+        - extracted_description:
+            required: true
+            used:
+              - README.md
+              - extracted.opam
+        - extracted_supported_ocaml_versions:
+            required: false
+            fields:
+              - text:
+                  required: true
+                  used:
+                    - README.md
+              - opam:
+                  required: true
+                  used:
+                    - extracted.opam
+        - extracted_dependencies:
+            required: false
+            type: list
+            item_fields:
+              - description:
+                  requied: true
+            used:
+              - README.md
+              - extracted.opam
+        - extracted_build:
+            required: false
+            used:
+              - README.md
+        - extracted_make_target:
+            required: true
+            used:
+              - extracted.opam
+        - extracted_tested_coq_opam_versions:
+            type: list
+            item_fields:
+              - version:
+                  required: true
+                  description: >
+                    Docker tag supported by coqorg/coq:
+                    https://github.com/coq-community/docker-coq/wiki#supported-tags
+                    Quote the strings, otherwise '8.10' becomes '8.1'.
+                  examples:
+                    - '8.11'
+                    - 'dev'
+            used:
+              - .travis.yml
+  - documentation:
+      required: false
+      description: >
+        The part of the README that is not auto-generated.
+      used:
+        - README.md
+  - index_documentation:
+      required: false
+      description: >
+        The part of index.md that is not auto-generated.
+      used:
+        - index.md
+  - coqdoc_index:
+      required: false
+      description: Position of Coqdoc main page relative to index
+      used:
+        - index.md
+        - README.md
+      examples:
+        - "docs/latest/coqdoc/toc.html"
+  - opam-file-maintainer:
+      required: false
+      default: palmskog@gmail.com
+      used:
+        - coq.opam
+        - extracted.opam
+  - opam-file-version:
+      required: false
+      used:
+        - coq.opam
+        - .travis.yml
+  - tested_coq_nix_versions:
+      type: list
+      description: If empty, the master branch of Coq will be tested.
+      item_fields:
+        - coq_version:
+            required: true
+            description: >
+              See https://nixos.org/manual/nixpkgs/unstable/#sec-language-coq
+              for the supported syntax.
+        - extra_dev_dependencies:
+            type: list
+            description: >
+              To be used if a development version of an extra
+              dependency is needed. In particular, this is required
+              for all dependencies when testing a branch of Coq
+              (instead of a released version).
+            item_fields:
+              - nix_name:
+                  required: true
+                  description: >
+                    Nix package name for the dependency (casing
+                    matters). See a list of available packages at
+                    https://search.nixos.org/packages?channel=unstable&query=coqPackages
+                    Put mathcomp when depending on one or several
+                    mathcomp-* package(s).
+              - dev_version:
+                  required: false
+                  default: master
+                  description: >
+                    Which version to use (generally the branch name or
+                    the PR hash). See
+                    https://nixos.org/manual/nixpkgs/unstable/#sec-language-coq
+                    for the supported syntax.
+      used:
+        - .travis.yml
+        - nix-action.yml
+  - tested_coq_opam_versions:
+      type: list
+      item_fields:
+        - version:
+            required: true
+            description: >
+              Docker tag supported by coqorg/coq:
+              https://github.com/coq-community/docker-coq/wiki#supported-tags
+              Quote the strings, otherwise '8.10' becomes '8.1'.
+            examples:
+              - '8.11'
+              - 'dev'
+        - repo:
+            required: false
+            description: >
+              Docker repository supporting the given docker tag.
+              Defaults to 'coqorg/coq'.
+            examples:
+              - 'mathcomp/mathcomp'
+              - 'mathcomp/mathcomp-dev'
+            used:
+              - .travis.yml
+              - docker-action.yml
+              - config.yml
+      used:
+        - .travis.yml
+        - docker-action.yml
+        - config.yml
+  - ci_cron_schedule:
+      required: false
+      description: >
+        Schedule for regular actions-based CI runs (in cron syntax).
+        The implied time zone is UTC. There is no default value to
+        keep projects from running their CI all at the same time. See
+        https://crontab.guru/ for a cron expression generator. You can
+        use 'echo "$(shuf -i0-59 -n1) $(shuf -i1-5 -n1) * * *"' to
+        generate a daily schedule starting at a random night-time
+        minute.
+      examples:
+        - '5 4 * * *'  # daily at 4:05
+        - '5 4 * * 0'  # at 04:05 on Sunday
+      used:
+        - docker-action.yml
+        - nix-action.yml
+  - cachix:
+      type: list
+      required: false
+      description: >
+        List of Cachix caches to install (to fetch from and optionally
+        to push to). By default, the coq, coq-community and math-comp
+        caches are installed and, if community is set to true, pushing
+        to the coq-community cache is activated.
+      item_fields:
+        - name:
+            required: true
+            description: Name of a public Cachix cache.
+            used:
+              - .travis.yml
+              - nix-action.yml
+        - push:
+            type: bool
+            description: >
+              To activate pushing to the Cachix cache.  This is only
+              supported in GitHub Actions (for now) and requires
+              having set the secret variable CACHIX_AUTH_TOKEN at the
+              repository or organization level.
+            used:
+              - nix-action.yml
+  - circleci_after_script:
+      type: string
+      required: false
+      description: >
+        Steps after installing package in CircleCI.
+        Indent by 4 spaces.
+      examples:
+        - |2-
+              - run:
+                  name: Generate Coqdoc
+                  command: |
+                    make -j`nproc` html
+                    tar cfz coqdoc.tgz html
+              - store_artifacts:
+                  path: coqdoc.tgz
+      used:
+        - config.yml
