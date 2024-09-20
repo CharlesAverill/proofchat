@@ -1,0 +1,3 @@
+-R . Proofchat
+theories/StringTheory.v
+theories/Messages.v
