@@ -22,7 +22,7 @@
 </div>
 
 <div class="doc">
-<a id="lab2"></a><h1 class="section">Messages</h1>
+<a id="lab3"></a><h1 class="section">Messages</h1>
 
 
 <div class="paragraph"> </div>
@@ -34,11 +34,12 @@
 <div class="code">
 
 <br/>
-<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Numbers.Cyclic.Int63.Sint63.html#"><span class="id" title="library">Coq.Numbers.Cyclic.Int63.Sint63</span></a>.<br/>
-<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">sint63_scope</span>.<br/>
-<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Arith.Arith.html#"><span class="id" title="library">Arith</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="Proofchat.theories.OCamlTypes.html#"><span class="id" title="library">OCamlTypes</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="Proofchat.theories.StringTheory.html#"><span class="id" title="library">StringTheory</span></a>.<br/>
-<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Bool.Bool.html#"><span class="id" title="library">Bool</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="Proofchat.theories.Monads.html#"><span class="id" title="library">Monads</span></a>.<br/>
+<span class="id" title="keyword">Close</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">nat_scope</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">Z_scope</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">sint63_scope</span>.<br/>
 
 <br/>
 </div>
@@ -52,11 +53,11 @@
 </div>
 <div class="code">
 <span class="id" title="keyword">Record</span> <a id="username" class="idref" href="#username"><span class="id" title="record">username</span></a> : <span class="id" title="keyword">Type</span> := {<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a id="uname" class="idref" href="#uname"><span class="id" title="projection">uname</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;; <a id="valid_length" class="idref" href="#valid_length"><span class="id" title="projection">valid_length</span></a> :<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1 <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Peano.html#e25b6ed2455c445c4a805315e6c2e053"><span class="id" title="notation">≤</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#length"><span class="id" title="definition">length</span></a> <a class="idref" href="Proofchat.theories.Messages.html#uname:2"><span class="id" title="method">uname</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Peano.html#e25b6ed2455c445c4a805315e6c2e053"><span class="id" title="notation">≤</span></a> 32<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;; <a id="no_spaces" class="idref" href="#no_spaces"><span class="id" title="projection">no_spaces</span></a> :<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#63a68285c81db8f9bc456233bb9ed181"><span class="id" title="notation">¬</span></a> <a class="idref" href="Proofchat.theories.StringTheory.html#InString"><span class="id" title="definition">InString</span></a> <a class="idref" href="Proofchat.theories.StringTheory.html#space"><span class="id" title="definition">space</span></a> <a class="idref" href="Proofchat.theories.Messages.html#uname:2"><span class="id" title="method">uname</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a id="Uname" class="idref" href="#Uname"><span class="id" title="projection">Uname</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;; <a id="ValidLength" class="idref" href="#ValidLength"><span class="id" title="projection">ValidLength</span></a> :<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1 <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.ZArith.BinInt.html#6f909ea2391c6073ff1047e870dd64e2"><span class="id" title="notation">≤</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.ZArith.BinInt.html#Z.of_nat"><span class="id" title="definition">Z.of_nat</span></a> (<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#length"><span class="id" title="definition">length</span></a> <a class="idref" href="Proofchat.theories.Messages.html#Uname:2"><span class="id" title="method">Uname</span></a>) <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.ZArith.BinInt.html#6f909ea2391c6073ff1047e870dd64e2"><span class="id" title="notation">≤</span></a> 32<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;; <a id="NoSpaces" class="idref" href="#NoSpaces"><span class="id" title="projection">NoSpaces</span></a> :<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#63a68285c81db8f9bc456233bb9ed181"><span class="id" title="notation">¬</span></a> <a class="idref" href="Proofchat.theories.StringTheory.html#InString"><span class="id" title="definition">InString</span></a> <a class="idref" href="Proofchat.theories.StringTheory.html#space"><span class="id" title="definition">space</span></a> <a class="idref" href="Proofchat.theories.Messages.html#Uname:2"><span class="id" title="method">Uname</span></a><br/>
 }.<br/>
 
 <br/>
@@ -82,17 +83,8 @@
 </div>
 <div class="code">
 <span class="id" title="keyword">Definition</span> <a id="validate_username" class="idref" href="#validate_username"><span class="id" title="definition">validate_username</span></a> (<a id="name:5" class="idref" href="#name:5"><span class="id" title="binder">name</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>) : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#bool"><span class="id" title="inductive">bool</span></a> :=<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="keyword">fix</span> <a id="no_spaces:9" class="idref" href="#no_spaces:9"><span class="id" title="binder">no_spaces</span></a> (<a id="s:6" class="idref" href="#s:6"><span class="id" title="binder">s</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>) : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#bool"><span class="id" title="inductive">bool</span></a> :=<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Proofchat.theories.Messages.html#s:6"><span class="id" title="variable">s</span></a> <span class="id" title="keyword">with</span><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#EmptyString"><span class="id" title="constructor">EmptyString</span></a> ⇒ <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#String"><span class="id" title="constructor">String</span></a> <span class="id" title="var">a</span> <span class="id" title="var">s'</span> ⇒<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> (<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.Ascii.html#ascii_dec"><span class="id" title="definition">ascii_dec</span></a> <span class="id" title="var">a</span> <a class="idref" href="Proofchat.theories.StringTheory.html#space"><span class="id" title="definition">space</span></a>) <span class="id" title="keyword">then</span><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#false"><span class="id" title="constructor">false</span></a><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Messages.html#no_spaces:7"><span class="id" title="variable">no_spaces</span></a> <span class="id" title="var">s'</span><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span> <span class="id" title="tactic">in</span><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">(</span></a>1 <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Arith.PeanoNat.html#0f31f5c1c6b6a21a3a187247222bc9e4"><span class="id" title="notation">&lt;=?</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#length"><span class="id" title="definition">length</span></a> <a class="idref" href="Proofchat.theories.Messages.html#name:5"><span class="id" title="variable">name</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">&amp;&amp;</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">(</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#length"><span class="id" title="definition">length</span></a> <a class="idref" href="Proofchat.theories.Messages.html#name:5"><span class="id" title="variable">name</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Arith.PeanoNat.html#0f31f5c1c6b6a21a3a187247222bc9e4"><span class="id" title="notation">&lt;=?</span></a> 32<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">)</span></a>)%<span class="id" title="var">nat</span><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">&amp;&amp;</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">(</span></a><a class="idref" href="Proofchat.theories.Messages.html#no_spaces:9"><span class="id" title="variable">no_spaces</span></a> <a class="idref" href="Proofchat.theories.Messages.html#name:5"><span class="id" title="variable">name</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">)</span></a>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">(</span></a>1 <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.ZArith.BinInt.html#90a0b0fc12252358f48538aa18bc4b8e"><span class="id" title="notation">&lt;=?</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.ZArith.BinInt.html#Z.of_nat"><span class="id" title="definition">Z.of_nat</span></a> (<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#length"><span class="id" title="definition">length</span></a> <a class="idref" href="Proofchat.theories.Messages.html#name:5"><span class="id" title="variable">name</span></a>)<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">&amp;&amp;</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">(</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.ZArith.BinInt.html#Z.of_nat"><span class="id" title="definition">Z.of_nat</span></a> (<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#length"><span class="id" title="definition">length</span></a> <a class="idref" href="Proofchat.theories.Messages.html#name:5"><span class="id" title="variable">name</span></a>) <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.ZArith.BinInt.html#90a0b0fc12252358f48538aa18bc4b8e"><span class="id" title="notation">&lt;=?</span></a> 32<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">)</span></a>)%<span class="id" title="var">Z</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">&amp;&amp;</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">(</span></a><a class="idref" href="Proofchat.theories.StringTheory.html#no_spaces"><span class="id" title="definition">no_spaces</span></a> <a class="idref" href="Proofchat.theories.Messages.html#name:5"><span class="id" title="variable">name</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">)</span></a>.<br/>
 
 <br/>
 </div>
@@ -105,25 +97,26 @@
 </div>
 <div class="code">
 <span class="id" title="keyword">Theorem</span> <a id="validate_username_correct" class="idref" href="#validate_username_correct"><span class="id" title="lemma">validate_username_correct</span></a> :<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">∀</span> (<a id="name:10" class="idref" href="#name:10"><span class="id" title="binder">name</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>)<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;(<a id="VALID:11" class="idref" href="#VALID:11"><span class="id" title="binder">VALID</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#validate_username"><span class="id" title="definition">validate_username</span></a> <a class="idref" href="Proofchat.theories.Messages.html#name:10"><span class="id" title="variable">name</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a>),<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1 <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Peano.html#e25b6ed2455c445c4a805315e6c2e053"><span class="id" title="notation">≤</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#length"><span class="id" title="definition">length</span></a> <a class="idref" href="Proofchat.theories.Messages.html#name:10"><span class="id" title="variable">name</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Peano.html#e25b6ed2455c445c4a805315e6c2e053"><span class="id" title="notation">≤</span></a> 32 <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#ba2b0e492d2b4675a0acf3ea92aabadd"><span class="id" title="notation">∧</span></a><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#63a68285c81db8f9bc456233bb9ed181"><span class="id" title="notation">¬</span></a> <a class="idref" href="Proofchat.theories.StringTheory.html#InString"><span class="id" title="definition">InString</span></a> <a class="idref" href="Proofchat.theories.StringTheory.html#space"><span class="id" title="definition">space</span></a> <a class="idref" href="Proofchat.theories.Messages.html#name:10"><span class="id" title="variable">name</span></a>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">∀</span> (<a id="name:6" class="idref" href="#name:6"><span class="id" title="binder">name</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a id="VALID:7" class="idref" href="#VALID:7"><span class="id" title="binder">VALID</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#validate_username"><span class="id" title="definition">validate_username</span></a> <a class="idref" href="Proofchat.theories.Messages.html#name:6"><span class="id" title="variable">name</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1 <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.ZArith.BinInt.html#6f909ea2391c6073ff1047e870dd64e2"><span class="id" title="notation">≤</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.ZArith.BinInt.html#Z.of_nat"><span class="id" title="definition">Z.of_nat</span></a> (<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#length"><span class="id" title="definition">length</span></a> <a class="idref" href="Proofchat.theories.Messages.html#name:6"><span class="id" title="variable">name</span></a>) <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.ZArith.BinInt.html#6f909ea2391c6073ff1047e870dd64e2"><span class="id" title="notation">≤</span></a> 32 <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#ba2b0e492d2b4675a0acf3ea92aabadd"><span class="id" title="notation">∧</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#63a68285c81db8f9bc456233bb9ed181"><span class="id" title="notation">¬</span></a> <a class="idref" href="Proofchat.theories.StringTheory.html#InString"><span class="id" title="definition">InString</span></a> <a class="idref" href="Proofchat.theories.StringTheory.html#space"><span class="id" title="definition">space</span></a> <a class="idref" href="Proofchat.theories.Messages.html#name:6"><span class="id" title="variable">name</span></a>.<br/>
 <span class="id" title="keyword">Proof</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">intros</span>. <span class="id" title="tactic">unfold</span> <a class="idref" href="Proofchat.theories.Messages.html#validate_username"><span class="id" title="definition">validate_username</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">VALID</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Bool.Bool.html#andb_true_iff"><span class="id" title="lemma">andb_true_iff</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">VALID</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">VALID</span> <span class="id" title="keyword">as</span> [<span class="id" title="var">Length</span> <span class="id" title="var">NoSpaces</span>].<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Bool.Bool.html#andb_true_iff"><span class="id" title="lemma">andb_true_iff</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">Length</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">Length</span> <span class="id" title="keyword">as</span> [<span class="id" title="var">NonEmpty</span> <span class="id" title="var">Le32</span>].<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Arith.PeanoNat.html#Nat.leb_le"><span class="id" title="lemma">Nat.leb_le</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">NonEmpty</span>, <span class="id" title="var">Le32</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.ZArith.BinInt.html#Z.leb_le"><span class="id" title="lemma">Z.leb_le</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">NonEmpty</span>, <span class="id" title="var">Le32</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">split</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="var">now</span> <span class="id" title="tactic">split</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">clear</span> - <span class="id" title="var">NoSpaces</span>. <span class="id" title="tactic">induction</span> <span class="id" title="var">name</span> <span class="id" title="keyword">as</span> [| <span class="id" title="var">a</span> <span class="id" title="var">name'</span>]. <span class="id" title="tactic">auto</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">simpl</span>. <span class="id" title="tactic">destruct</span> (<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.Ascii.html#ascii_dec"><span class="id" title="definition">ascii_dec</span></a> <span class="id" title="var">a</span> <a class="idref" href="Proofchat.theories.StringTheory.html#space"><span class="id" title="definition">space</span></a>) <span class="id" title="keyword">as</span> [<span class="id" title="var">a_space</span>|<span class="id" title="var">a_space</span>].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">simpl</span>. <span class="id" title="tactic">simpl</span> <span class="id" title="tactic">in</span> <span class="id" title="var">NoSpaces</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> (<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.Ascii.html#ascii_dec"><span class="id" title="definition">ascii_dec</span></a> <span class="id" title="var">a</span> <a class="idref" href="Proofchat.theories.StringTheory.html#space"><span class="id" title="definition">space</span></a>) <span class="id" title="keyword">as</span> [<span class="id" title="var">a_space</span>|<span class="id" title="var">a_space</span>].<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-- <span class="id" title="tactic">inversion</span> <span class="id" title="var">NoSpaces</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-- <span class="id" title="tactic">intro</span> <span class="id" title="var">Contra</span>. <span class="id" title="tactic">destruct</span> <span class="id" title="var">Contra</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="var">now</span> <span class="id" title="tactic">apply</span> <span class="id" title="var">a_space</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="var">now</span> <span class="id" title="tactic">apply</span> (<span class="id" title="var">IHname'</span> <span class="id" title="var">NoSpaces</span>).<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="var">now</span> <span class="id" title="tactic">apply</span> <span class="id" title="var">IHname'</span>.<br/>
 <span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
@@ -132,27 +125,31 @@
 <div class="doc">
     Instantiate a username object if it
     passes <span class="inlinecode"><a class="idref" href="Proofchat.theories.Messages.html#validate_username"><span class="id" title="definition">validate_username</span></a></span>, or return
-    <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a></span>
+    <span class="inlinecode"><span class="id" title="var">None</span></span>
 
 </div>
 <div class="code">
-<span class="id" title="keyword">Definition</span> <a id="new_username" class="idref" href="#new_username"><span class="id" title="definition">new_username</span></a> (<a id="s:12" class="idref" href="#s:12"><span class="id" title="binder">s</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>) : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#option"><span class="id" title="inductive">option</span></a> <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>.<br/>
+<span class="id" title="keyword">Definition</span> <a id="new_username" class="idref" href="#new_username"><span class="id" title="definition">new_username</span></a> (<a id="s:8" class="idref" href="#s:8"><span class="id" title="binder">s</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>) : <a class="idref" href="Proofchat.theories.Monads.html#optionE"><span class="id" title="inductive">optionE</span></a> <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> (<a class="idref" href="Proofchat.theories.Messages.html#validate_username"><span class="id" title="definition">validate_username</span></a> <span class="id" title="var">s</span>) <span class="id" title="var">eqn</span>:<span class="id" title="var">E</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">apply</span> <a class="idref" href="Proofchat.theories.Messages.html#validate_username_correct"><span class="id" title="lemma">validate_username_correct</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">E</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">E</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">exact</span> (<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> {|<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Messages.html#uname"><span class="id" title="projection">uname</span></a> := <span class="id" title="var">s</span>;<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Messages.html#valid_length"><span class="id" title="projection">valid_length</span></a> := <span class="id" title="var">H</span>;<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Messages.html#no_spaces"><span class="id" title="projection">no_spaces</span></a> := <span class="id" title="var">H0</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">exact</span> (<a class="idref" href="Proofchat.theories.Monads.html#SomeE"><span class="id" title="constructor">SomeE</span></a> {|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Messages.html#Uname"><span class="id" title="projection">Uname</span></a> := <span class="id" title="var">s</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Messages.html#ValidLength"><span class="id" title="projection">ValidLength</span></a> := <span class="id" title="var">H</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Messages.html#NoSpaces"><span class="id" title="projection">NoSpaces</span></a> := <span class="id" title="var">H0</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|}).<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">exact</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">destruct</span> (<a class="idref" href="Proofchat.theories.StringTheory.html#no_spaces"><span class="id" title="definition">no_spaces</span></a> <span class="id" title="var">s</span>).<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-- <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">exact</span> (<a class="idref" href="Proofchat.theories.Monads.html#NoneE"><span class="id" title="constructor">NoneE</span></a> "Username length must be in range [1..32]").<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-- <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">exact</span> (<a class="idref" href="Proofchat.theories.Monads.html#NoneE"><span class="id" title="constructor">NoneE</span></a> "Username cannot contain spaces").<br/>
 <span class="id" title="keyword">Defined</span>.<br/>
 
 <br/>
 </div>
 
 <div class="doc">
-    The message types sent by the client to the server
+    The message types sent by a client to the server
 
 </div>
 <div class="code">
@@ -164,13 +161,13 @@
 
 <div class="paragraph"> </div>
 
-    Server Response: <span class="inlinecode"><span class="id" title="var">ACK</span></span> with number of users and list
+    Server Response: <span class="inlinecode"><a class="idref" href="Proofchat.theories.Messages.html#ACK"><span class="id" title="constructor">ACK</span></a></span> with number of users and list
         of users. Send message to all other
         users that "name" has joined chat.
 
 </div>
 <div class="code">
-| <a id="REG" class="idref" href="#REG"><span class="id" title="constructor">REG</span></a>   (<a id="name:15" class="idref" href="#name:15"><span class="id" title="binder">name</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>)<br/>
+| <a id="REG" class="idref" href="#REG"><span class="id" title="constructor">REG</span></a>   (<a id="name:11" class="idref" href="#name:11"><span class="id" title="binder">name</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>)<br/>
 </div>
 
 <div class="doc">
@@ -184,7 +181,7 @@
 
 </div>
 <div class="code">
-| <a id="MESG" class="idref" href="#MESG"><span class="id" title="constructor">MESG</span></a>  (<a id="message:16" class="idref" href="#message:16"><span class="id" title="binder">message</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>)<br/>
+| <a id="MESG" class="idref" href="#MESG"><span class="id" title="constructor">MESG</span></a>  (<a id="message:12" class="idref" href="#message:12"><span class="id" title="binder">message</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>)<br/>
 </div>
 
 <div class="doc">
@@ -197,7 +194,7 @@
 
 </div>
 <div class="code">
-| <a id="PMSG" class="idref" href="#PMSG"><span class="id" title="constructor">PMSG</span></a>  (<a id="message:17" class="idref" href="#message:17"><span class="id" title="binder">message</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>) (<a id="target:18" class="idref" href="#target:18"><span class="id" title="binder">target</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>)<br/>
+| <a id="PMSG" class="idref" href="#PMSG"><span class="id" title="constructor">PMSG</span></a>  (<a id="message:13" class="idref" href="#message:13"><span class="id" title="binder">message</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>) (<a id="target:14" class="idref" href="#target:14"><span class="id" title="binder">target</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>)<br/>
 </div>
 
 <div class="doc">
@@ -205,7 +202,7 @@
 
 <div class="paragraph"> </div>
 
-    Server Response: De-register "name". <span class="inlinecode"><span class="id" title="var">ACK</span></span> with
+    Server Response: De-register "name". <span class="inlinecode"><a class="idref" href="Proofchat.theories.Messages.html#ACK"><span class="id" title="constructor">ACK</span></a></span> with
         updated number of users and list of
         remaining users. Send message to
         remaining users that "name" has
@@ -213,7 +210,112 @@
 
 </div>
 <div class="code">
-| <a id="EXIT" class="idref" href="#EXIT"><span class="id" title="constructor">EXIT</span></a>  (<a id="name:19" class="idref" href="#name:19"><span class="id" title="binder">name</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>).<br/>
+| <a id="EXIT" class="idref" href="#EXIT"><span class="id" title="constructor">EXIT</span></a>  (<a id="name:15" class="idref" href="#name:15"><span class="id" title="binder">name</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+    Types of server errors that can be sent to clients
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Inductive</span> <a id="error" class="idref" href="#error"><span class="id" title="definition, inductive"><span id="error_rect" class="id"><span id="error_ind" class="id"><span id="error_rec" class="id"><span id="error_sind" class="id">error</span></span></span></span></span></a> : <span class="id" title="keyword">Type</span> :=<br/>
+| <a id="UsernameTaken" class="idref" href="#UsernameTaken"><span class="id" title="constructor">UsernameTaken</span></a><br/>
+| <a id="UsernameTooLong" class="idref" href="#UsernameTooLong"><span class="id" title="constructor">UsernameTooLong</span></a><br/>
+| <a id="UsernameHasSpaces" class="idref" href="#UsernameHasSpaces"><span class="id" title="constructor">UsernameHasSpaces</span></a><br/>
+| <a id="PmsgTargetNotExists" class="idref" href="#PmsgTargetNotExists"><span class="id" title="constructor">PmsgTargetNotExists</span></a><br/>
+| <a id="UnknownMessageFormat" class="idref" href="#UnknownMessageFormat"><span class="id" title="constructor">UnknownMessageFormat</span></a><br/>
+| <a id="Error" class="idref" href="#Error"><span class="id" title="constructor">Error</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+    Map errors to OCaml integers
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="int_of_error" class="idref" href="#int_of_error"><span class="id" title="definition">int_of_error</span></a> (<a id="e:18" class="idref" href="#e:18"><span class="id" title="binder">e</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#error"><span class="id" title="inductive">error</span></a>) : <span class="id" title="var">int</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Proofchat.theories.Messages.html#e:18"><span class="id" title="variable">e</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="Proofchat.theories.Messages.html#UsernameTaken"><span class="id" title="constructor">UsernameTaken</span></a> ⇒ 0<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="Proofchat.theories.Messages.html#UsernameTooLong"><span class="id" title="constructor">UsernameTooLong</span></a> ⇒ 1<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="Proofchat.theories.Messages.html#UsernameHasSpaces"><span class="id" title="constructor">UsernameHasSpaces</span></a> ⇒ 2<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="Proofchat.theories.Messages.html#PmsgTargetNotExists"><span class="id" title="constructor">PmsgTargetNotExists</span></a> ⇒ 3<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="Proofchat.theories.Messages.html#UnknownMessageFormat"><span class="id" title="constructor">UnknownMessageFormat</span></a> ⇒ 4<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="Proofchat.theories.Messages.html#Error"><span class="id" title="constructor">Error</span></a> ⇒ 5<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+    Map OCaml integers to errors
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="error_of_int" class="idref" href="#error_of_int"><span class="id" title="definition">error_of_int</span></a> (<a id="n:20" class="idref" href="#n:20"><span class="id" title="binder">n</span></a> : <span class="id" title="var">int</span>) : <a class="idref" href="Proofchat.theories.Messages.html#error"><span class="id" title="inductive">error</span></a> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Numbers.Cyclic.Int63.Sint63.html#to_Z"><span class="id" title="definition">to_Z</span></a> <a class="idref" href="Proofchat.theories.Messages.html#n:20"><span class="id" title="variable">n</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| 0 ⇒ <a class="idref" href="Proofchat.theories.Messages.html#UsernameTaken"><span class="id" title="constructor">UsernameTaken</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| 1 ⇒ <a class="idref" href="Proofchat.theories.Messages.html#UsernameTooLong"><span class="id" title="constructor">UsernameTooLong</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| 2 ⇒ <a class="idref" href="Proofchat.theories.Messages.html#UsernameHasSpaces"><span class="id" title="constructor">UsernameHasSpaces</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| 3 ⇒ <a class="idref" href="Proofchat.theories.Messages.html#PmsgTargetNotExists"><span class="id" title="constructor">PmsgTargetNotExists</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| 4 ⇒ <a class="idref" href="Proofchat.theories.Messages.html#UnknownMessageFormat"><span class="id" title="constructor">UnknownMessageFormat</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ <a class="idref" href="Proofchat.theories.Messages.html#Error"><span class="id" title="constructor">Error</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+    The message types sent from the server to clients
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Inductive</span> <a id="server_message" class="idref" href="#server_message"><span class="id" title="definition, inductive"><span id="server_message_rect" class="id"><span id="server_message_ind" class="id"><span id="server_message_rec" class="id"><span id="server_message_sind" class="id">server_message</span></span></span></span></span></a> : <span class="id" title="keyword">Type</span> :=<br/>
+</div>
+
+<div class="doc">
+    Purpose: Confirms successful registration,
+        indicates number of users in chat
+        (including user who just joined),
+        lists all users (including user who
+        just joined).
+    Client Response: Displays information to user.
+        Prompts user for chat messages.
+
+</div>
+<div class="code">
+| <a id="ACK" class="idref" href="#ACK"><span class="id" title="constructor">ACK</span></a> (<a id="num_users:23" class="idref" href="#num_users:23"><span class="id" title="binder">num_users</span></a> : <span class="id" title="var">int</span>) (<a id="users:24" class="idref" href="#users:24"><span class="id" title="binder">users</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#list"><span class="id" title="inductive">list</span></a> <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>)<br/>
+</div>
+
+<div class="doc">
+    Purpose: Chat "message" from "username" to be
+        sent to clients. If the message is to
+        inform of a user joining or leaving
+        chat, "name" is set to “SERVER”.
+    Client Response: Displays username of sender and
+        message to user.
+
+</div>
+<div class="code">
+| <a id="MSG" class="idref" href="#MSG"><span class="id" title="constructor">MSG</span></a> (<a id="name:25" class="idref" href="#name:25"><span class="id" title="binder">name</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>) (<a id="message:26" class="idref" href="#message:26"><span class="id" title="binder">message</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>)<br/>
+</div>
+
+<div class="doc">
+    Purpose: An error has occurred. Error codes:
+        0: Username taken
+        1: Username too long
+        2: Username contains spaces
+        3: Unknown user for private
+        message
+        4: Unknown message format
+    Client Response: Handles error appropriately
+        depending on errorcode.
+
+</div>
+<div class="code">
+| <a id="ERR" class="idref" href="#ERR"><span class="id" title="constructor">ERR</span></a> (<a id="err:27" class="idref" href="#err:27"><span class="id" title="binder">err</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#error"><span class="id" title="inductive">error</span></a>).<br/>
 </div>
 </div>
 
