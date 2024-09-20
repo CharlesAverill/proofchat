@@ -1,0 +1,44 @@
+---
+fullname: ProofChat
+shortname: proofchat
+organization: CharlesAverill
+community: false
+action: true
+coqdoc: true
+coqdoc_index: 'docs/latest/coqdoc/toc.html'
+
+synopsis: A verified TCP client/server chat application
+
+description: |-
+  This project contains a verified TCP client/server chat application written in
+  Coq, with extraction procedures to OCaml. All networking is accomplished through
+  the builtin OCaml Unix library.
+
+authors:
+- name: Charles Averill
+  initial: true
+  orcid: 0000-0001-6614-1808
+
+maintainers:
+- name: Charles Averill
+  nickname: CharlesAverill
+
+license:
+  fullname: MIT License
+  identifier: MIT
+
+supported_coq_versions:
+  text: 8.19.1 or later
+  opam: '{(>= "8.19.1")}'
+
+tested_coq_opam_versions:
+- version: '8.19'
+
+keywords:
+- name: TCP
+
+documentation: |-
+  ## Documentation
+  
+  TBD
+---

@@ -1,0 +1,32 @@
+# This file was generated from `meta.yml`, please do not edit manually.
+# Follow the instructions on https://github.com/coq-community/templates to regenerate.
+
+opam-version: "2.0"
+maintainer: "palmskog@gmail.com"
+version: "dev"
+
+homepage: "https://github.com/CharlesAverill/proofchat"
+dev-repo: "git+https://github.com/CharlesAverill/proofchat.git"
+bug-reports: "https://github.com/CharlesAverill/proofchat/issues"
+doc: "https://CharlesAverill.github.io/proofchat/"
+license: "MIT"
+
+synopsis: "A verified TCP client/server chat application"
+description: """
+This project contains a verified TCP client/server chat application written in
+Coq, with extraction procedures to OCaml. All networking is accomplished through
+the builtin OCaml Unix library."""
+
+build: [make "-j%{jobs}%"]
+install: [make "install"]
+depends: [
+  "coq" {(>= "8.19.1")}
+]
+
+tags: [
+  "keyword:TCP"
+  "logpath:"
+]
+authors: [
+  "Charles Averill"
+]
