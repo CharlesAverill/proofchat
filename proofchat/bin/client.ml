@@ -215,20 +215,17 @@ let new_username s =
 (** val print_socket_addr : Unix.sockaddr -> unit **)
 
 let print_socket_addr = function
-| Unix.ADDR_UNIX s' -> (fun s -> print_string s; flush stdout) s'
+| Unix.ADDR_UNIX s' -> print_string s'
 | Unix.ADDR_INET (addr, p) ->
   (fun x y -> x; y)
-    ((fun x y -> x; y)
-      ((fun s -> print_string s; flush stdout)
-        (Unix.string_of_inet_addr addr))
-      ((fun s -> print_string s; flush stdout) ":")) (print_int p)
+    ((fun x y -> x; y) (print_string (Unix.string_of_inet_addr addr))
+      (print_string ":")) (print_int p)
 
 (** val client : string -> int -> unit optionE **)
 
 let client host portno =
   (fun x y -> x; y)
-    ((fun s -> print_endline s; flush stdout)
-      "Please enter a username (length 1-32, no spaces)")
+    (print_endline "Please enter a username (length 1-32, no spaces)")
     (let username_string = read_line () in
      match new_username username_string with
      | SomeE _ ->
@@ -243,10 +240,8 @@ let client host portno =
            ((fun x y -> x; y)
              ((fun x y -> x; y)
                ((fun x y -> x; y)
-                 ((fun s -> print_string s; flush stdout)
-                   "Opening client connection to ")
-                 (print_socket_addr socket_addr))
-               ((fun s -> print_string s; flush stdout) " as "))
+                 (print_string "Opening client connection to ")
+                 (print_socket_addr socket_addr)) (print_string " as "))
              (print_socket_addr (Unix.getsockname socket_fd)))
-           ((fun s -> print_endline s; flush stdout) "")) (SomeE ())
+           (print_endline "")) (SomeE ())
      | NoneE err -> NoneE err)

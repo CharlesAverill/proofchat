@@ -20,8 +20,8 @@ Definition print_intdd := print_int.
 
 Extract Inlined Constant read_line => "read_line".
 Extract Inlined Constant print_int => "print_int".
-Extract Inlined Constant print_string => "(fun s -> print_string s; flush stdout)".
-Extract Inlined Constant print_endline => "(fun s -> print_endline s; flush stdout)".
+Extract Inlined Constant print_string => "print_string".
+Extract Inlined Constant print_endline => "print_endline".
 Extract Inlined Constant socket => "Unix.socket".
 Extract Inlined Constant sleep => "Unix.sleep".
 Extract Inlined Constant inet_addr_of_string => "Unix.inet_addr_of_string".

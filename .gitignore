@@ -3,3 +3,4 @@
 *.glob
 *.vo*
 .lia.cache
+proofchat/_build
