@@ -1,9 +1,18 @@
+(** * Messages
+
+    In this section, we introduce well-formed usernames and messages, along
+    with proof-carrying operations over them
+*)
+
 Require Export Coq.Numbers.Cyclic.Int63.Sint63.
 Open Scope sint63_scope.
 Require Import Arith.
 Require Export StringTheory.
 Require Export Bool.
 
+(** 
+    A proof-carrying username type
+*)
 Record username : Type := {
       uname : string
     ; valid_length :
@@ -12,6 +21,12 @@ Record username : Type := {
         ~ InString space uname
 }.
 
+(**
+    Returns [true] if
+    - The length of [name] is in $[1..32]$
+    - [name] contains no spaces
+    and [false] otherwise
+*)
 Definition validate_username (name : string) : bool :=
     let fix no_spaces (s : string) : bool :=
         match s with
@@ -25,6 +40,11 @@ Definition validate_username (name : string) : bool :=
     ((1 <=? length name) && (length name <=? 32))%nat
         && (no_spaces name).
 
+(**
+    Ensure that [validate_username] provides
+    assurances for the properties we're
+    interested in
+*)
 Theorem validate_username_correct :
     forall (name : string)
     (VALID : validate_username name = true),
@@ -47,6 +67,11 @@ Proof.
             + now apply (IHname' NoSpaces).
 Qed.
 
+(**
+    Instantiate a username object if it
+    passes [validate_username], or return
+    [None]
+*)
 Definition new_username (s : string) : option username.
     destruct (validate_username s) eqn:E.
     - apply validate_username_correct in E. 

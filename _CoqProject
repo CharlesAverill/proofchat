@@ -1,3 +1,4 @@
 -R . Proofchat
+-docroot docs
 theories/StringTheory.v
 theories/Messages.v
