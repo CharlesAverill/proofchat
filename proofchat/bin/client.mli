@@ -63,15 +63,13 @@ module Z :
 
 val length : string -> nat
 
-val space : char
-
-val no_spaces : string -> bool
-
 type 'x optionE =
 | SomeE of 'x
 | NoneE of string
 
+val space : char
 
+val no_spaces : string -> bool
 
 type username =
   string

@@ -58,8 +58,8 @@ Definition print_socket_addr (s : sockaddr) : unit :=
     match s with
     | ADDR_UNIX s' => print_string s'
     | ADDR_INET addr p =>
-        print_string (string_of_inet_addr addr) #;
-        print_string ":" #;
+        let* _ <= print_string (string_of_inet_addr addr) #;
+        let* _ <= print_string ":" #;
         print_int p
     end.
 
@@ -67,14 +67,14 @@ Definition print_socket_addr (s : sockaddr) : unit :=
     Wraps up all client logic: port binding, threading, etc.
 *)
 Definition client (host : string) (portno : port) : optionE unit :=
-    print_endline "Please enter a username (length 1-32, no spaces)" #;
+    let* _ <= print_endline "Please enter a username (length 1-32, no spaces)" #;
     let username_string := read_line tt in
     uname <- new_username username_string ;;
-    let socket_fd := socket PF_INET SOCK_STREAM (-1) in
+    let socket_fd := socket PF_INET SOCK_STREAM 0 in
     let socket_addr := ADDR_INET (inet_addr_of_string host) portno in
-    print_string "Opening client connection to " #;
-    print_socket_addr socket_addr #;
-    print_string " as " #;
-    print_socket_addr (getsockname socket_fd) #;
-    print_endline "" #;
+    let* _ <= print_string "Opening client connection to " #;
+    let* _ <= print_socket_addr socket_addr #;
+    let* _ <= print_string " as " #;
+    let* _ <= print_socket_addr (getsockname socket_fd) #;
+    let* _ <= print_endline "" #;
     return tt.

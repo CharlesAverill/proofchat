@@ -17,6 +17,7 @@ Require Export Bool.
 
 (** Miscellaneous *)
 Require Export Sockets.
+Require Export Monads.
 
 (** Functions *)
 Axiom read_line : unit -> string.

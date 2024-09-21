@@ -164,6 +164,10 @@ let rec length s =
     (fun _ s' -> S (length s'))
     s
 
+type 'x optionE =
+| SomeE of 'x
+| NoneE of string
+
 (** val space : char **)
 
 let space =
@@ -181,12 +185,6 @@ let rec no_spaces s =
     (fun _ -> true)
     (fun a s' -> if (=) a space then false else no_spaces s')
     s
-
-type 'x optionE =
-| SomeE of 'x
-| NoneE of string
-
-
 
 type username =
   string
@@ -217,31 +215,25 @@ let new_username s =
 let print_socket_addr = function
 | Unix.ADDR_UNIX s' -> print_string s'
 | Unix.ADDR_INET (addr, p) ->
-  (fun x y -> x; y)
-    ((fun x y -> x; y) (print_string (Unix.string_of_inet_addr addr))
-      (print_string ":")) (print_int p)
+  let () = print_string (Unix.string_of_inet_addr addr) in
+  let () = print_string ":" in print_int p
 
 (** val client : string -> int -> unit optionE **)
 
 let client host portno =
-  (fun x y -> x; y)
-    (print_endline "Please enter a username (length 1-32, no spaces)")
-    (let username_string = read_line () in
-     match new_username username_string with
-     | SomeE _ ->
-       let socket_fd =
-         Unix.socket Unix.PF_INET Unix.SOCK_STREAM (Uint63.of_int (-1))
-       in
-       let socket_addr = Unix.ADDR_INET ((Unix.inet_addr_of_string host),
-         portno)
-       in
-       (fun x y -> x; y)
-         ((fun x y -> x; y)
-           ((fun x y -> x; y)
-             ((fun x y -> x; y)
-               ((fun x y -> x; y)
-                 (print_string "Opening client connection to ")
-                 (print_socket_addr socket_addr)) (print_string " as "))
-             (print_socket_addr (Unix.getsockname socket_fd)))
-           (print_endline "")) (SomeE ())
-     | NoneE err -> NoneE err)
+  let () = print_endline "Please enter a username (length 1-32, no spaces)" in
+  let username_string = read_line () in
+  (match new_username username_string with
+   | SomeE _ ->
+     let socket_fd =
+       Unix.socket Unix.PF_INET Unix.SOCK_STREAM (Uint63.of_int (0))
+     in
+     let socket_addr = Unix.ADDR_INET ((Unix.inet_addr_of_string host),
+       portno)
+     in
+     let () = print_string "Opening client connection to " in
+     let () = print_socket_addr socket_addr in
+     let () = print_string " as " in
+     let () = print_socket_addr (Unix.getsockname socket_fd) in
+     let () = print_endline "" in SomeE ()
+   | NoneE err -> NoneE err)

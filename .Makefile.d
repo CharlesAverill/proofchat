@@ -1,9 +1,9 @@
 theories/Sockets.vo theories/Sockets.glob theories/Sockets.v.beautified theories/Sockets.required_vo: theories/Sockets.v 
 theories/Sockets.vio: theories/Sockets.v 
 theories/Sockets.vos theories/Sockets.vok theories/Sockets.required_vos: theories/Sockets.v 
-theories/OCamlTypes.vo theories/OCamlTypes.glob theories/OCamlTypes.v.beautified theories/OCamlTypes.required_vo: theories/OCamlTypes.v theories/Sockets.vo
-theories/OCamlTypes.vio: theories/OCamlTypes.v theories/Sockets.vio
-theories/OCamlTypes.vos theories/OCamlTypes.vok theories/OCamlTypes.required_vos: theories/OCamlTypes.v theories/Sockets.vos
+theories/OCamlTypes.vo theories/OCamlTypes.glob theories/OCamlTypes.v.beautified theories/OCamlTypes.required_vo: theories/OCamlTypes.v theories/Sockets.vo theories/Monads.vo
+theories/OCamlTypes.vio: theories/OCamlTypes.v theories/Sockets.vio theories/Monads.vio
+theories/OCamlTypes.vos theories/OCamlTypes.vok theories/OCamlTypes.required_vos: theories/OCamlTypes.v theories/Sockets.vos theories/Monads.vos
 theories/StringTheory.vo theories/StringTheory.glob theories/StringTheory.v.beautified theories/StringTheory.required_vo: theories/StringTheory.v 
 theories/StringTheory.vio: theories/StringTheory.v 
 theories/StringTheory.vos theories/StringTheory.vok theories/StringTheory.required_vos: theories/StringTheory.v 
