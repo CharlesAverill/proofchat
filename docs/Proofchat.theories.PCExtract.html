@@ -33,9 +33,9 @@
 <div class="code">
 
 <br/>
-<span class="id" title="keyword">Require</span> <span class="id" title="library">Extraction</span>.<br/>
+<span class="id" title="keyword">Require</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.extraction.Extraction.html#"><span class="id" title="library">Extraction</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.StringTheory.html#"><span class="id" title="library">StringTheory</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.Client.html#"><span class="id" title="library">Client</span></a>.<br/>
-<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.OCamlTypes.html#"><span class="id" title="library">OCamlTypes</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.Monads.html#"><span class="id" title="library">Monads</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.Sockets.html#"><span class="id" title="library">Sockets</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.extraction.ExtrOcamlBasic.html#"><span class="id" title="library">ExtrOcamlBasic</span></a>.<br/>
@@ -52,6 +52,7 @@
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_int</span> ⇒ "print_int".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_string</span> ⇒ "print_string".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_endline</span> ⇒ "print_endline".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">string_of_int</span> ⇒ "string_of_int".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">socket</span> ⇒ "Unix.socket".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">sleep</span> ⇒ "Unix.sleep".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">inet_addr_of_string</span> ⇒ "Unix.inet_addr_of_string".<br/>
@@ -59,6 +60,11 @@
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">getsockname</span> ⇒ "Unix.getsockname".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">inet_addr</span> ⇒ "Unix.inet_addr".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">file_descr</span> ⇒ "Unix.file_descr".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">connect</span> ⇒ "Unix.connect".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Constant</span> <span class="id" title="var">send</span> ⇒ "(fun a b c d e -&gt; Unix.send a (Pfbytes.bytes_of_byte_list b) c d e)".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">close</span> ⇒ "Unix.close".<br/>
+
+<br/>
 
 <br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">port</span> ⇒ "int".<br/>
@@ -68,6 +74,8 @@
 &nbsp;&nbsp;&nbsp;&nbsp;"Unix.socket_type" [ "Unix.SOCK_STREAM" "Unix.SOCK_DGRAM" "Unix.SOCK_RAW" "Unix.SOCK_SEQPACKET" ].<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="keyword">Inductive</span> <a class="idref" href="Proofchat.theories.Sockets.html#sockaddr"><span class="id" title="inductive">sockaddr</span></a> ⇒<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;"Unix.sockaddr" [ "Unix.ADDR_UNIX" "Unix.ADDR_INET" ].<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="keyword">Inductive</span> <a class="idref" href="Proofchat.theories.Sockets.html#msg_flag"><span class="id" title="inductive">msg_flag</span></a> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;"Unix.msg_flag" [ "Unix.MSG_OOB" "Unix.MSG_DONTROUTE" "Unix.MSG_PEEK" ].<br/>
 
 <br/>
 <span class="id" title="keyword">Recursive Extraction</span> <span class="id" title="var">client</span>.<br/>
