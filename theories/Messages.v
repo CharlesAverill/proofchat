@@ -7,10 +7,15 @@
 
 Require Export OCamlTypes.
 Require Export StringTheory.
+Require Import List.
+Import ListNotations.
 Require Export Monads.
+Require Import Recdef.
 Close Scope nat_scope.
 Open Scope Z_scope.
 Open Scope sint63_scope.
+Open Scope list_scope.
+Open Scope monad_scope.
 
 
 (** 
@@ -19,7 +24,7 @@ Open Scope sint63_scope.
 Record username : Type := {
       Uname : string
     ; ValidLength :
-        1 <= Z.of_nat (length Uname) <= 32
+        (1 <= to_Z (int_len_string Uname) <= 32)%Z
     ; NoSpaces :
         ~ InString space Uname
 }.
@@ -36,7 +41,7 @@ Record username : Type := {
     and [false] otherwise
 *)
 Definition validate_username (name : string) : bool :=
-    ((1 <=? Z.of_nat (length name)) && (Z.of_nat (length name) <=? 32))%Z
+    ((1 <=? int_len_string name) && (int_len_string name <=? 32))
         && (no_spaces name).
 
 (**
@@ -47,7 +52,7 @@ Definition validate_username (name : string) : bool :=
 Theorem validate_username_correct :
     forall (name : string)
     (VALID : validate_username name = true),
-        1 <= Z.of_nat (length name) <= 32 /\
+        (1 <= to_Z (int_len_string name) <= 32)%Z /\
         ~ InString space name.
 Proof.
     intros. unfold validate_username in VALID.
@@ -55,9 +60,9 @@ Proof.
     destruct VALID as [Length NoSpaces].
     apply andb_true_iff in Length.
     destruct Length as [NonEmpty Le32].
-    apply Z.leb_le in NonEmpty, Le32.
+    apply leb_spec in NonEmpty, Le32.
     split.
-    - now split.
+    - change 1%Z with (to_Z 1). now split. 
     - clear - NoSpaces. induction name as [| a name']. auto.
         simpl. simpl in NoSpaces. 
         destruct (ascii_dec a space) as [a_space|a_space].
@@ -126,6 +131,24 @@ Inductive client_message : Type :=
         left chat.
 *)
 | EXIT  (name : username).
+
+Definition serialize_string (s : string) : bytes :=
+    (int63_to_bytes (int_len_string s)) ++ (bytes_of_string s).
+
+Definition serialize_username (u : username) : bytes :=
+    bytes_of_string (pad_string_r u.(Uname) x00 32).
+
+Definition serialize_client_message (cm : client_message) : bytes :=
+    match cm with
+    | REG name =>
+        x00 :: serialize_username name
+    | MESG msg =>
+        x01 :: serialize_string msg
+    | PMSG message name =>
+        x02 :: serialize_username name ++ serialize_string message
+    | EXIT name =>
+        x03 :: serialize_username name
+    end.
 
 (**
     Types of server errors that can be sent to clients
@@ -199,3 +222,30 @@ Inductive server_message : Type :=
         depending on errorcode.
 *)
 | ERR (err : error).
+
+Function resend 
+        (fuel : int) (n_sent : int)
+        (sockfd : file_descr) (message : bytes)
+        (len_msg : int)
+        {measure (fun x => (Z.to_nat (to_Z x))) fuel}
+        : optionE unit :=
+    if sub1_no_underflow fuel then
+        (* let* _ <= print_endline ("Sent " ++ (string_of_int n_sent) ++ " bytes") #; *)
+        let n_sent' := send sockfd message n_sent (len_msg - n_sent) [] in
+        if n_sent + n_sent' <=? len_msg then
+            resend (fuel - 1) (n_sent + n_sent') sockfd message len_msg
+        else
+            SomeE tt
+    else
+        NoneE ("Timed out while sending message '" ++ (string_of_bytes message) ++ "'").
+    prove_sub1.
+Defined.
+
+Definition send_message 
+        (sockfd : file_descr) (message : bytes) : optionE unit :=
+    let len_msg := int_len_list message in
+    let n_sent := send sockfd message 0 len_msg [] in
+    if n_sent <=? len_msg then
+        resend 100 n_sent sockfd message len_msg
+    else
+        SomeE tt.

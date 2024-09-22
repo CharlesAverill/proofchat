@@ -25,3 +25,8 @@ Inductive socket_type : Type :=
 Inductive sockaddr : Type :=
 | ADDR_UNIX (s : string)
 | ADDR_INET (addr : inet_addr) (p : port).
+
+Inductive msg_flag : Type :=
+| MSG_OOB
+| MSG_DONTROUTE
+| MSG_PEEK.
