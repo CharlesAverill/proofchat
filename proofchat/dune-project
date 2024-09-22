@@ -5,22 +5,22 @@
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github CharlesAverill/proofchat))
 
-(authors "Author Name")
+(authors "Charles Averill")
 
-(maintainers "Maintainer Name")
+(maintainers "Charles Averill")
 
-(license LICENSE)
+(license ../LICENSE)
 
-(documentation https://url/to/documentation)
+(documentation https://charlesaverill.github.io/proofchat/toc.html)
 
 (package
  (name proofchat)
- (synopsis "A short synopsis")
- (description "A longer description")
- (depends ocaml dune)
- (tags
-  (topics "to describe" your project)))
+ (synopsis "A verified TCP client/server chat application")
+ (description "This project contains a verified TCP client/server chat application written in
+  Coq, extracted to OCaml. All networking is accomplished through
+  the builtin OCaml Unix library.")
+ (depends ocaml dune))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project

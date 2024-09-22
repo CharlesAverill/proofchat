@@ -16,7 +16,7 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 
 
 This project contains a verified TCP client/server chat application written in
-Coq, with extraction procedures to OCaml. All networking is accomplished through
+Coq, extracted to OCaml. All networking is accomplished through
 the builtin OCaml Unix library.
 
 ## Meta
