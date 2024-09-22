@@ -37,9 +37,6 @@ Extract Inlined Constant close => "Unix.close".
 Extract Inlined Constant int63_to_bytes => "Proofchat.Pfbytes.int63_to_bytes".
 Extract Inlined Constant bytes_to_int63 => "Proofchat.Pfbytes.bytes_to_int63".
 
-(* Extract Inlined Constant int_len_list => "Bytes.length".
-Extract Inlined Constant bytes_of_string => "Bytes.of_string". *)
-
 Extract Inlined Constant port => "int".
 Extract Inductive socket_domain => 
     "Unix.socket_domain" [ "Unix.PF_UNIX" "Unix.PF_INET" "Unix.PF_INET6" ].

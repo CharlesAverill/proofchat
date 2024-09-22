@@ -82,12 +82,14 @@ Proof.
       -- lia.
 Qed. *)
 
+(** Get a list of [byte]s from a [string] *)
 Fixpoint bytes_of_string (s : string) : bytes :=
     match s with
     | EmptyString => []
     | String a s' => (byte_of_ascii a) :: bytes_of_string s'
     end.
 
+(** Get a [string] from a list of [byte]s *)
 Fixpoint string_of_bytes (b : bytes) : string :=
     match b with
     | [] => EmptyString
@@ -98,6 +100,7 @@ Fixpoint string_of_bytes (b : bytes) : string :=
 Definition int_len_string (s : string) : int :=
     int_len_list (bytes_of_string s).
 
+(** Create a list of length [n] containing only [x] *)
 Function create_list {X : Type} (x : X) (n : int) 
     {measure (fun x => (Z.to_nat (to_Z x))) n} : list X :=
     (if sub1_no_underflow n then
@@ -107,9 +110,11 @@ Function create_list {X : Type} (x : X) (n : int)
     prove_sub1.
 Defined.
 
+(** Pad a string on the right with [b] until the entire string has length [target_len] *)
 Definition pad_string_r (s : string) (b : byte) (target_len : int) : string :=
     s ++ (string_of_bytes (create_list byte b (target_len - int_len_string s + 1))). 
 
+(** Trim all occurances of [b] from the right side of [s] *)
 Definition trim_r (s : string) (b : byte) : string :=
     let fix aux (sb : bytes) : bytes :=
         match sb with
@@ -122,6 +127,7 @@ Definition trim_r (s : string) (b : byte) : string :=
         end in
     string_of_bytes (rev (aux (rev (bytes_of_string s)))).
 
+(** Get the first [n] elements of [l], or fail if not enough *)
 Fixpoint first_n {X : Type} (l : list X) (n : int) : optionE (list X) :=
     match l with
     | [] => if (n =? 0)%sint63 then SomeE [] else NoneE "first_n failure"
@@ -133,10 +139,12 @@ Fixpoint first_n {X : Type} (l : list X) (n : int) : optionE (list X) :=
             return []
     end.
 
+(** Get the last [n] elements of [l], or fail if not enough *)
 Definition last_n {X : Type} (l : list X) (n : int) : optionE (list X) :=
     aux <- first_n (rev l) n ;;
     return (rev aux).
 
+(** Split [l] into [n] lists of length [size], or fail if not enough elements *)
 Function divide {X : Type} (l : list X) (size n : int) 
     {measure (fun x => (Z.to_nat (to_Z x))) n}: optionE (list (list X)) :=
     if sub1_no_underflow n then

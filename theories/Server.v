@@ -9,13 +9,19 @@ Require Import Recdef.
 Open Scope monad_scope.
 
 (**
-    The internal loop of our client sending thread
+    Accept new connections and spawn synchronization threads for each of them
 *)
-Definition server_send_thread_internal (_ : unit) : optionE unit :=
-    repeat_until_timeout max_int (fun _ => SomeE tt).
+Definition server_accept_thread (socket_fd : file_descr) : optionE unit :=
+    repeat_until_timeout max_int (fun _ =>
+        let '(client_descr, client_addr) := accept socket_fd in
+        let* _ <= print_endline 
+            ("Accepted client socket " ++ (string_of_socket_addr client_addr)
+             ++ " as " ++ (string_of_socket_addr (getsockname client_descr))) #;
+        NoneE "server_accept_thread recurse"
+    ).
 
 (**
-    Wraps up all client logic: port binding, threading, etc.
+    Wraps up all server logic: port binding, threading, etc.
 *)
 Definition server (host : string) (portno : port) : optionE unit :=
     (* Create a TCP socket *)
@@ -28,13 +34,11 @@ Definition server (host : string) (portno : port) : optionE unit :=
     (* Wait for and accept any incoming TCP connection requests. *)
     let* _ <= listen socket_fd 10 #;
     let* _ <= print_endline "Server started" #;
-    match accept socket_fd with (x, y) =>
-    let* _ <= print_endline "accepted" #;
-    let* _ <= sleep 100 #;
+    _ <- server_accept_thread socket_fd ;;
     (* Receive ACK from server *)
     (* Display chatroom information to user output *)
     (* Wait for user input *)
     (* Wait for chat messages from server *)
-    let* _ <= print_endline "Closing client connection" #;
+    let* _ <= print_endline "Closing server" #;
     let* _ <= close socket_fd #;
-    return tt end.
+    return tt.

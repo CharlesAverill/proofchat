@@ -19,9 +19,32 @@
 <h1 class="libtitle">Library Proofchat.theories.Monads</h1>
 
 <div class="code">
+</div>
+
+<div class="doc">
+<a id="lab3"></a><h1 class="section">Monads</h1>
+
+
+<div class="paragraph"> </div>
+
+    This section introduces monadic notation and a custom <span class="inlinecode"><span class="id" title="var">option</span></span> type
+    to facilitate error propagation and prevent I/O functions from being
+    removed during extraction
+
+</div>
+<div class="code">
+
+<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#"><span class="id" title="library">String</span></a>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+An option type with an error message argument for the failure case,
+    similar to a result 
+</div>
+<div class="code">
 <span class="id" title="keyword">Inductive</span> <a id="optionE" class="idref" href="#optionE"><span class="id" title="definition, inductive"><span id="optionE_rect" class="id"><span id="optionE_ind" class="id"><span id="optionE_rec" class="id"><span id="optionE_sind" class="id">optionE</span></span></span></span></span></a> (<a id="X:1" class="idref" href="#X:1"><span class="id" title="binder">X</span></a>:<span class="id" title="keyword">Type</span>) : <span class="id" title="keyword">Type</span> :=<br/>
 &nbsp;&nbsp;| <a id="SomeE" class="idref" href="#SomeE"><span class="id" title="constructor">SomeE</span></a> (<a id="x:4" class="idref" href="#x:4"><span class="id" title="binder">x</span></a> : <a class="idref" href="Proofchat.theories.Monads.html#X:1"><span class="id" title="variable">X</span></a>)<br/>
 &nbsp;&nbsp;| <a id="NoneE" class="idref" href="#NoneE"><span class="id" title="constructor">NoneE</span></a> (<a id="s:5" class="idref" href="#s:5"><span class="id" title="binder">s</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>).<br/>
@@ -48,6 +71,13 @@
 &nbsp;&nbsp;:= (<a class="idref" href="Proofchat.theories.Monads.html#NoneE"><span class="id" title="constructor">NoneE</span></a> <span class="id" title="var">s</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 60) : <span class="id" title="var">monad_scope</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Attempt to convert a list of <span class="inlinecode"><a class="idref" href="Proofchat.theories.Monads.html#optionE"><span class="id" title="inductive">optionE</span></a></span>s to a list of the <span class="inlinecode"><a class="idref" href="Proofchat.theories.Monads.html#SomeE"><span class="id" title="constructor">SomeE</span></a></span> contents,
+    fails on the first <span class="inlinecode"><a class="idref" href="Proofchat.theories.Monads.html#NoneE"><span class="id" title="constructor">NoneE</span></a></span> 
+</div>
+<div class="code">
 <span class="id" title="keyword">Fixpoint</span> <a id="strip_options" class="idref" href="#strip_options"><span class="id" title="definition">strip_options</span></a> {<a id="X:6" class="idref" href="#X:6"><span class="id" title="binder">X</span></a> : <span class="id" title="keyword">Type</span>} (<a id="l:7" class="idref" href="#l:7"><span class="id" title="binder">l</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#list"><span class="id" title="inductive">list</span></a> (<a class="idref" href="Proofchat.theories.Monads.html#optionE"><span class="id" title="inductive">optionE</span></a> <a class="idref" href="Proofchat.theories.Monads.html#X:6"><span class="id" title="variable">X</span></a>)) : <a class="idref" href="Proofchat.theories.Monads.html#optionE"><span class="id" title="inductive">optionE</span></a> (<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#list"><span class="id" title="inductive">list</span></a> <a class="idref" href="Proofchat.theories.Monads.html#X:6"><span class="id" title="variable">X</span></a>) :=<br/>
 &nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Proofchat.theories.Monads.html#l:7"><span class="id" title="variable">l</span></a> <span class="id" title="keyword">with</span><br/>
 &nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#nil"><span class="id" title="constructor">nil</span></a> ⇒ <a class="idref" href="Proofchat.theories.Monads.html#::monad_scope:'return'_x"><span class="id" title="notation">return</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#nil"><span class="id" title="constructor">nil</span></a><br/>

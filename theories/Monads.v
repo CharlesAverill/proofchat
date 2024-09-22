@@ -1,5 +1,14 @@
+(** * Monads 
+
+    This section introduces monadic notation and a custom [option] type
+    to facilitate error propagation and prevent I/O functions from being
+    removed during extraction
+*)
+
 Require Import String.
 
+(** An option type with an error message argument for the failure case,
+    similar to a result *)
 Inductive optionE (X:Type) : Type :=
   | SomeE (x : X)
   | NoneE (s : string).
@@ -23,6 +32,8 @@ Notation " 'return' e "
 Notation " 'fail' s "
   := (NoneE s) (at level 60) : monad_scope.
 
+(** Attempt to convert a list of [optionE]s to a list of the [SomeE] contents,
+    fails on the first [NoneE] *)
 Fixpoint strip_options {X : Type} (l : list (optionE X)) : optionE (list X) :=
   match l with
   | nil => return nil

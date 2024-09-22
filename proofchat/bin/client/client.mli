@@ -86,15 +86,15 @@ val validate_username : string -> bool
 
 val new_username : string -> username optionE
 
+val serialize_string : string -> bytes
+
+val serialize_username : username -> bytes
+
 type client_message =
 | REG of username
 | MESG of string
 | PMSG of string * username
 | EXIT of username
-
-val serialize_string : string -> bytes
-
-val serialize_username : username -> bytes
 
 val serialize_client_message : client_message -> bytes
 

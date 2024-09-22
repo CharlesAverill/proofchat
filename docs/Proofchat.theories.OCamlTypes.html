@@ -102,6 +102,13 @@ Functions
 <span class="id" title="keyword">Axiom</span> <a id="getsockname" class="idref" href="#getsockname"><span class="id" title="axiom">getsockname</span></a> : <a class="idref" href="Proofchat.theories.Sockets.html#file_descr"><span class="id" title="axiom">file_descr</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="Proofchat.theories.Sockets.html#sockaddr"><span class="id" title="inductive">sockaddr</span></a>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+These are implemented in Proofchat.Pfbytes, but should be moved to a Coq
+    definition soon so that we can prove correctness of deserialization 
+</div>
+<div class="code">
 <span class="id" title="keyword">Axiom</span> <a id="int63_to_bytes" class="idref" href="#int63_to_bytes"><span class="id" title="axiom">int63_to_bytes</span></a> : <span class="id" title="var">int</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="Proofchat.theories.OCamlTypes.html#bytes"><span class="id" title="definition">bytes</span></a>.<br/>
 <span class="id" title="keyword">Axiom</span> <a id="bytes_to_int63" class="idref" href="#bytes_to_int63"><span class="id" title="axiom">bytes_to_int63</span></a> : <a class="idref" href="Proofchat.theories.OCamlTypes.html#bytes"><span class="id" title="definition">bytes</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <span class="id" title="var">int</span>.<br/>
 
@@ -109,7 +116,7 @@ Functions
 </div>
 
 <div class="doc">
-    A helper lemma for below
+    A convenience lemma similar to <span class="inlinecode"><span class="id" title="var">Z2Nat.inj_lt</span></span>
 
 </div>
 <div class="code">
@@ -138,6 +145,14 @@ Functions
 &nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">(</span></a>0 <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Numbers.Cyclic.Int63.Sint63.html#a5702614ed847ad2954e9299f1612b24"><span class="id" title="notation">&lt;=?</span></a> <a class="idref" href="Proofchat.theories.OCamlTypes.html#n:21"><span class="id" title="variable">n</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Numbers.Cyclic.Int63.Sint63.html#Sint63NotationsInternalB.::sint63_scope:x_'-'_x"><span class="id" title="notation">-</span></a> 1<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">&amp;&amp;</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">(</span></a><a class="idref" href="Proofchat.theories.OCamlTypes.html#n:21"><span class="id" title="variable">n</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Numbers.Cyclic.Int63.Sint63.html#Sint63NotationsInternalB.::sint63_scope:x_'-'_x"><span class="id" title="notation">-</span></a> 1 <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Numbers.Cyclic.Int63.Sint63.html#17a948dabbb8c725b8f0a8c90a8c4f10"><span class="id" title="notation">&lt;?</span></a> <a class="idref" href="Proofchat.theories.OCamlTypes.html#n:21"><span class="id" title="variable">n</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">)</span></a>)%<span class="id" title="var">sint63</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+    Prove termination for <span class="inlinecode"><span class="id" title="keyword">Function</span></span>s where the recursive call is in the
+    <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a></span> branch of <span class="inlinecode"><span class="id" title="keyword">if</span></span> <span class="inlinecode"><a class="idref" href="Proofchat.theories.OCamlTypes.html#sub1_no_underflow"><span class="id" title="definition">sub1_no_underflow</span></a></span> <span class="inlinecode"><span class="id" title="var">n</span></span> <span class="inlinecode"><span class="id" title="keyword">then</span></span> <span class="inlinecode">...</span> <span class="inlinecode"><span class="id" title="keyword">else</span></span> <span class="inlinecode">...</span>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Ltac</span> <span class="id" title="var">prove_sub1</span> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">intros</span>;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">unfold</span> <a class="idref" href="Proofchat.theories.OCamlTypes.html#sub1_no_underflow"><span class="id" title="definition">sub1_no_underflow</span></a> <span class="id" title="tactic">in</span> *;<br/>

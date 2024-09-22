@@ -22,13 +22,13 @@
 </div>
 
 <div class="doc">
-<a id="lab3"></a><h1 class="section">Messages</h1>
+<a id="lab4"></a><h1 class="section">Messages</h1>
 
 
 <div class="paragraph"> </div>
 
-    In this section, we introduce well-formed usernames and messages, along
-    with proof-carrying operations over them
+    In this section we handle serialization and deserialization of messages
+    between the client and server
 
 </div>
 <div class="code">
@@ -50,6 +50,17 @@
 </div>
 
 <div class="doc">
+<a id="lab5"></a><h2 class="section">Usernames</h2>
+
+
+<div class="paragraph"> </div>
+
+    Usernames have specific properties per the project requirements. This
+    section implements a dependently-typed Record type for usernames and some
+    automation to create them at will.
+
+<div class="paragraph"> </div>
+
 
 <div class="paragraph"> </div>
 
@@ -154,6 +165,35 @@
 </div>
 
 <div class="doc">
+<a id="lab6"></a><h2 class="section">Serialization</h2>
+
+
+<div class="paragraph"> </div>
+
+    Here we start handling serialization and deserialization of messages
+
+<div class="paragraph"> </div>
+
+ Get a list of bytes from a string - not null-terminated 
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="serialize_string" class="idref" href="#serialize_string"><span class="id" title="definition">serialize_string</span></a> (<a id="s:9" class="idref" href="#s:9"><span class="id" title="binder">s</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>) : <a class="idref" href="Proofchat.theories.OCamlTypes.html#bytes"><span class="id" title="definition">bytes</span></a> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#bc347c51eaf667706ae54503b26d52c6"><span class="id" title="notation">(</span></a><a class="idref" href="Proofchat.theories.OCamlTypes.html#int63_to_bytes"><span class="id" title="axiom">int63_to_bytes</span></a> (<a class="idref" href="Proofchat.theories.StringTheory.html#int_len_string"><span class="id" title="definition">int_len_string</span></a> <a class="idref" href="Proofchat.theories.Messages.html#s:9"><span class="id" title="variable">s</span></a>)<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#bc347c51eaf667706ae54503b26d52c6"><span class="id" title="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#bc347c51eaf667706ae54503b26d52c6"><span class="id" title="notation">++</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#bc347c51eaf667706ae54503b26d52c6"><span class="id" title="notation">(</span></a><a class="idref" href="Proofchat.theories.StringTheory.html#bytes_of_string"><span class="id" title="definition">bytes_of_string</span></a> <a class="idref" href="Proofchat.theories.Messages.html#s:9"><span class="id" title="variable">s</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#bc347c51eaf667706ae54503b26d52c6"><span class="id" title="notation">)</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Get a list of bytes from a username - padded to length 32 
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="serialize_username" class="idref" href="#serialize_username"><span class="id" title="definition">serialize_username</span></a> (<a id="u:10" class="idref" href="#u:10"><span class="id" title="binder">u</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>) : <a class="idref" href="Proofchat.theories.OCamlTypes.html#bytes"><span class="id" title="definition">bytes</span></a> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.StringTheory.html#bytes_of_string"><span class="id" title="definition">bytes_of_string</span></a> (<a class="idref" href="Proofchat.theories.StringTheory.html#pad_string_r"><span class="id" title="definition">pad_string_r</span></a> <a class="idref" href="Proofchat.theories.Messages.html#u:10"><span class="id" title="variable">u</span></a>.(<a class="idref" href="Proofchat.theories.Messages.html#Uname"><span class="id" title="projection">Uname</span></a>) <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Byte.html#x00"><span class="id" title="constructor">x00</span></a> 32).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
     The message types sent by a client to the server
 
 </div>
@@ -172,7 +212,7 @@
 
 </div>
 <div class="code">
-| <a id="REG" class="idref" href="#REG"><span class="id" title="constructor">REG</span></a>   (<a id="name:11" class="idref" href="#name:11"><span class="id" title="binder">name</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>)<br/>
+| <a id="REG" class="idref" href="#REG"><span class="id" title="constructor">REG</span></a>   (<a id="name:13" class="idref" href="#name:13"><span class="id" title="binder">name</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>)<br/>
 </div>
 
 <div class="doc">
@@ -186,7 +226,7 @@
 
 </div>
 <div class="code">
-| <a id="MESG" class="idref" href="#MESG"><span class="id" title="constructor">MESG</span></a>  (<a id="message:12" class="idref" href="#message:12"><span class="id" title="binder">message</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>)<br/>
+| <a id="MESG" class="idref" href="#MESG"><span class="id" title="constructor">MESG</span></a>  (<a id="message:14" class="idref" href="#message:14"><span class="id" title="binder">message</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>)<br/>
 </div>
 
 <div class="doc">
@@ -199,7 +239,7 @@
 
 </div>
 <div class="code">
-| <a id="PMSG" class="idref" href="#PMSG"><span class="id" title="constructor">PMSG</span></a>  (<a id="message:13" class="idref" href="#message:13"><span class="id" title="binder">message</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>) (<a id="target:14" class="idref" href="#target:14"><span class="id" title="binder">target</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>)<br/>
+| <a id="PMSG" class="idref" href="#PMSG"><span class="id" title="constructor">PMSG</span></a>  (<a id="message:15" class="idref" href="#message:15"><span class="id" title="binder">message</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>) (<a id="target:16" class="idref" href="#target:16"><span class="id" title="binder">target</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>)<br/>
 </div>
 
 <div class="doc">
@@ -215,17 +255,17 @@
 
 </div>
 <div class="code">
-| <a id="EXIT" class="idref" href="#EXIT"><span class="id" title="constructor">EXIT</span></a>  (<a id="name:15" class="idref" href="#name:15"><span class="id" title="binder">name</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>).<br/>
+| <a id="EXIT" class="idref" href="#EXIT"><span class="id" title="constructor">EXIT</span></a>  (<a id="name:17" class="idref" href="#name:17"><span class="id" title="binder">name</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>).<br/>
 
 <br/>
-<span class="id" title="keyword">Definition</span> <a id="serialize_string" class="idref" href="#serialize_string"><span class="id" title="definition">serialize_string</span></a> (<a id="s:16" class="idref" href="#s:16"><span class="id" title="binder">s</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>) : <a class="idref" href="Proofchat.theories.OCamlTypes.html#bytes"><span class="id" title="definition">bytes</span></a> :=<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#bc347c51eaf667706ae54503b26d52c6"><span class="id" title="notation">(</span></a><a class="idref" href="Proofchat.theories.OCamlTypes.html#int63_to_bytes"><span class="id" title="axiom">int63_to_bytes</span></a> (<a class="idref" href="Proofchat.theories.StringTheory.html#int_len_string"><span class="id" title="definition">int_len_string</span></a> <a class="idref" href="Proofchat.theories.Messages.html#s:16"><span class="id" title="variable">s</span></a>)<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#bc347c51eaf667706ae54503b26d52c6"><span class="id" title="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#bc347c51eaf667706ae54503b26d52c6"><span class="id" title="notation">++</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#bc347c51eaf667706ae54503b26d52c6"><span class="id" title="notation">(</span></a><a class="idref" href="Proofchat.theories.StringTheory.html#bytes_of_string"><span class="id" title="definition">bytes_of_string</span></a> <a class="idref" href="Proofchat.theories.Messages.html#s:16"><span class="id" title="variable">s</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#bc347c51eaf667706ae54503b26d52c6"><span class="id" title="notation">)</span></a>.<br/>
+</div>
 
-<br/>
-<span class="id" title="keyword">Definition</span> <a id="serialize_username" class="idref" href="#serialize_username"><span class="id" title="definition">serialize_username</span></a> (<a id="u:17" class="idref" href="#u:17"><span class="id" title="binder">u</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#username"><span class="id" title="record">username</span></a>) : <a class="idref" href="Proofchat.theories.OCamlTypes.html#bytes"><span class="id" title="definition">bytes</span></a> :=<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.StringTheory.html#bytes_of_string"><span class="id" title="definition">bytes_of_string</span></a> (<a class="idref" href="Proofchat.theories.StringTheory.html#pad_string_r"><span class="id" title="definition">pad_string_r</span></a> <a class="idref" href="Proofchat.theories.Messages.html#u:17"><span class="id" title="variable">u</span></a>.(<a class="idref" href="Proofchat.theories.Messages.html#Uname"><span class="id" title="projection">Uname</span></a>) <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Byte.html#x00"><span class="id" title="constructor">x00</span></a> 32).<br/>
+<div class="doc">
+Convert a <span class="inlinecode"><a class="idref" href="Proofchat.theories.Messages.html#client_message"><span class="id" title="inductive">client_message</span></a></span> into a list of <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Byte.html#byte"><span class="id" title="inductive">byte</span></a></span>s, prepended with 
+    codes representing the message type
 
-<br/>
+</div>
+<div class="code">
 <span class="id" title="keyword">Definition</span> <a id="serialize_client_message" class="idref" href="#serialize_client_message"><span class="id" title="definition">serialize_client_message</span></a> (<a id="cm:18" class="idref" href="#cm:18"><span class="id" title="binder">cm</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#client_message"><span class="id" title="inductive">client_message</span></a>) : <a class="idref" href="Proofchat.theories.OCamlTypes.html#bytes"><span class="id" title="definition">bytes</span></a> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Proofchat.theories.Messages.html#cm:18"><span class="id" title="variable">cm</span></a> <span class="id" title="keyword">with</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="Proofchat.theories.Messages.html#REG"><span class="id" title="constructor">REG</span></a> <span class="id" title="var">name</span> ⇒<br/>
@@ -239,6 +279,12 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Convert a list of <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Byte.html#byte"><span class="id" title="inductive">byte</span></a></span>s into a <span class="inlinecode"><a class="idref" href="Proofchat.theories.Messages.html#client_message"><span class="id" title="inductive">client_message</span></a></span> 
+</div>
+<div class="code">
 <span class="id" title="keyword">Definition</span> <a id="deserialize_client_message" class="idref" href="#deserialize_client_message"><span class="id" title="definition">deserialize_client_message</span></a> (<a id="b:20" class="idref" href="#b:20"><span class="id" title="binder">b</span></a> : <a class="idref" href="Proofchat.theories.OCamlTypes.html#bytes"><span class="id" title="definition">bytes</span></a>) : <a class="idref" href="Proofchat.theories.Monads.html#optionE"><span class="id" title="inductive">optionE</span></a> <a class="idref" href="Proofchat.theories.Messages.html#client_message"><span class="id" title="inductive">client_message</span></a> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Proofchat.theories.Messages.html#b:20"><span class="id" title="variable">b</span></a> <span class="id" title="keyword">with</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Byte.html#x00"><span class="id" title="constructor">x00</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::list_scope:x_'::'_x"><span class="id" title="notation">::</span></a> <span class="id" title="var">t</span> ⇒ <br/>
@@ -362,6 +408,13 @@
 | <a id="ERR" class="idref" href="#ERR"><span class="id" title="constructor">ERR</span></a> (<a id="err:38" class="idref" href="#err:38"><span class="id" title="binder">err</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#error"><span class="id" title="inductive">error</span></a>).<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Convert a <span class="inlinecode"><a class="idref" href="Proofchat.theories.Messages.html#server_message"><span class="id" title="inductive">server_message</span></a></span> into a list of <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Byte.html#byte"><span class="id" title="inductive">byte</span></a></span>s, prepended with 
+    codes representing the message type 
+</div>
+<div class="code">
 <span class="id" title="keyword">Definition</span> <a id="serialize_server_message" class="idref" href="#serialize_server_message"><span class="id" title="definition">serialize_server_message</span></a> (<a id="sm:39" class="idref" href="#sm:39"><span class="id" title="binder">sm</span></a> : <a class="idref" href="Proofchat.theories.Messages.html#server_message"><span class="id" title="inductive">server_message</span></a>) : <a class="idref" href="Proofchat.theories.OCamlTypes.html#bytes"><span class="id" title="definition">bytes</span></a> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Proofchat.theories.Messages.html#sm:39"><span class="id" title="variable">sm</span></a> <span class="id" title="keyword">with</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="Proofchat.theories.Messages.html#ACK"><span class="id" title="constructor">ACK</span></a> <span class="id" title="var">num_users</span> <span class="id" title="var">users</span> ⇒<br/>
@@ -373,6 +426,12 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Convert a list of <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Byte.html#byte"><span class="id" title="inductive">byte</span></a></span>s into a <span class="inlinecode"><a class="idref" href="Proofchat.theories.Messages.html#server_message"><span class="id" title="inductive">server_message</span></a></span> 
+</div>
+<div class="code">
 <span class="id" title="keyword">Definition</span> <a id="deserialize_server_message" class="idref" href="#deserialize_server_message"><span class="id" title="definition">deserialize_server_message</span></a> (<a id="b:41" class="idref" href="#b:41"><span class="id" title="binder">b</span></a> : <a class="idref" href="Proofchat.theories.OCamlTypes.html#bytes"><span class="id" title="definition">bytes</span></a>) : <a class="idref" href="Proofchat.theories.Monads.html#optionE"><span class="id" title="inductive">optionE</span></a> <a class="idref" href="Proofchat.theories.Messages.html#server_message"><span class="id" title="inductive">server_message</span></a> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Proofchat.theories.Messages.html#b:41"><span class="id" title="variable">b</span></a> <span class="id" title="keyword">with</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Byte.html#x00"><span class="id" title="constructor">x00</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#::list_scope:x_'::'_x"><span class="id" title="notation">::</span></a> <span class="id" title="var">t</span> ⇒<br/>
@@ -388,6 +447,14 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Sends a message to a socket, checking for the case where only some of the
+    message was transmitted. Will attempt to send the remaining bytes (recursively)
+    <span class="inlinecode"><span class="id" title="var">fuel</span></span> times 
+</div>
+<div class="code">
 <span class="id" title="keyword">Function</span> <span class="id" title="var">resend</span> <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a id="fuel:50" class="idref" href="#fuel:50"><span class="id" title="binder"><span id="fuel:57" class="id"><span id="fuel:62" class="id"><span id="fuel:68" class="id"><span id="fuel:74" class="id"><span id="fuel:79" class="id">fuel</span></span></span></span></span></span></a> : <span class="id" title="var">int</span>) (<a id="n_sent:51" class="idref" href="#n_sent:51"><span class="id" title="binder"><span id="n_sent:58" class="id"><span id="n_sent:63" class="id"><span id="n_sent:69" class="id"><span id="n_sent:75" class="id"><span id="n_sent:80" class="id">n_sent</span></span></span></span></span></span></a> : <span class="id" title="var">int</span>)<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a id="sockfd:52" class="idref" href="#sockfd:52"><span class="id" title="binder"><span id="sockfd:59" class="id"><span id="sockfd:64" class="id"><span id="sockfd:70" class="id"><span id="sockfd:76" class="id"><span id="sockfd:81" class="id">sockfd</span></span></span></span></span></span></a> : <a class="idref" href="Proofchat.theories.Sockets.html#file_descr"><span class="id" title="axiom">file_descr</span></a>) (<a id="message:53" class="idref" href="#message:53"><span class="id" title="binder"><span id="message:60" class="id"><span id="message:65" class="id"><span id="message:71" class="id"><span id="message:77" class="id"><span id="message:82" class="id">message</span></span></span></span></span></span></a> : <a class="idref" href="Proofchat.theories.OCamlTypes.html#bytes"><span class="id" title="definition">bytes</span></a>)<br/>
@@ -407,14 +474,14 @@
 <span class="id" title="keyword">Defined</span>.<br/>
 
 <br/>
-<span class="id" title="keyword">Definition</span> <a id="send_message" class="idref" href="#send_message"><span class="id" title="definition">send_message</span></a> <br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a id="sockfd:117" class="idref" href="#sockfd:117"><span class="id" title="binder">sockfd</span></a> : <a class="idref" href="Proofchat.theories.Sockets.html#file_descr"><span class="id" title="axiom">file_descr</span></a>) (<a id="message:118" class="idref" href="#message:118"><span class="id" title="binder">message</span></a> : <a class="idref" href="Proofchat.theories.OCamlTypes.html#bytes"><span class="id" title="definition">bytes</span></a>) : <a class="idref" href="Proofchat.theories.Monads.html#optionE"><span class="id" title="inductive">optionE</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a> :=<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="len_msg:119" class="idref" href="#len_msg:119"><span class="id" title="binder">len_msg</span></a> := <a class="idref" href="Proofchat.theories.StringTheory.html#int_len_list"><span class="id" title="definition">int_len_list</span></a> <a class="idref" href="Proofchat.theories.Messages.html#message:118"><span class="id" title="variable">message</span></a> <span class="id" title="tactic">in</span><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="n_sent:120" class="idref" href="#n_sent:120"><span class="id" title="binder">n_sent</span></a> := <a class="idref" href="Proofchat.theories.OCamlTypes.html#send"><span class="id" title="axiom">send</span></a> <a class="idref" href="Proofchat.theories.Messages.html#sockfd:117"><span class="id" title="variable">sockfd</span></a> <a class="idref" href="Proofchat.theories.Messages.html#message:118"><span class="id" title="variable">message</span></a> 0 <a class="idref" href="Proofchat.theories.Messages.html#len_msg:119"><span class="id" title="variable">len_msg</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Lists.List.html#ae9a5e1034e143b218b09d8e454472bd"><span class="id" title="notation">[]</span></a> <span class="id" title="tactic">in</span><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <a class="idref" href="Proofchat.theories.Messages.html#n_sent:120"><span class="id" title="variable">n_sent</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Numbers.Cyclic.Int63.Sint63.html#a5702614ed847ad2954e9299f1612b24"><span class="id" title="notation">&lt;=?</span></a> <a class="idref" href="Proofchat.theories.Messages.html#len_msg:119"><span class="id" title="variable">len_msg</span></a> <span class="id" title="keyword">then</span><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Messages.html#resend"><span class="id" title="lemma">resend</span></a> 100 <a class="idref" href="Proofchat.theories.Messages.html#n_sent:120"><span class="id" title="variable">n_sent</span></a> <a class="idref" href="Proofchat.theories.Messages.html#sockfd:117"><span class="id" title="variable">sockfd</span></a> <a class="idref" href="Proofchat.theories.Messages.html#message:118"><span class="id" title="variable">message</span></a> <a class="idref" href="Proofchat.theories.Messages.html#len_msg:119"><span class="id" title="variable">len_msg</span></a><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Monads.html#SomeE"><span class="id" title="constructor">SomeE</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#tt"><span class="id" title="constructor">tt</span></a>.<br/>
+</div>
+
+<div class="doc">
+Wrapper for <span class="inlinecode"><a class="idref" href="Proofchat.theories.Messages.html#resend"><span class="id" title="lemma">resend</span></a></span> 
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="send_message" class="idref" href="#send_message"><span class="id" title="definition">send_message</span></a> (<a id="sockfd:117" class="idref" href="#sockfd:117"><span class="id" title="binder">sockfd</span></a> : <a class="idref" href="Proofchat.theories.Sockets.html#file_descr"><span class="id" title="axiom">file_descr</span></a>) (<a id="message:118" class="idref" href="#message:118"><span class="id" title="binder">message</span></a> : <a class="idref" href="Proofchat.theories.OCamlTypes.html#bytes"><span class="id" title="definition">bytes</span></a>) : <a class="idref" href="Proofchat.theories.Monads.html#optionE"><span class="id" title="inductive">optionE</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Messages.html#resend"><span class="id" title="lemma">resend</span></a> 100 0 <a class="idref" href="Proofchat.theories.Messages.html#sockfd:117"><span class="id" title="variable">sockfd</span></a> <a class="idref" href="Proofchat.theories.Messages.html#message:118"><span class="id" title="variable">message</span></a> (<a class="idref" href="Proofchat.theories.StringTheory.html#int_len_list"><span class="id" title="definition">int_len_list</span></a> <a class="idref" href="Proofchat.theories.Messages.html#message:118"><span class="id" title="variable">message</span></a>).<br/>
 </div>
 </div>
 

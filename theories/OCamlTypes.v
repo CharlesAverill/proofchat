@@ -42,12 +42,14 @@ Axiom inet_addr_of_string : string -> inet_addr.
 Axiom string_of_inet_addr : inet_addr -> string.
 Axiom getsockname : file_descr -> sockaddr.
 
+(** These are implemented in Proofchat.Pfbytes, but should be moved to a Coq
+    definition soon so that we can prove correctness of deserialization *)
 Axiom int63_to_bytes : int -> bytes.
 Axiom bytes_to_int63 : bytes -> int.
 
 
 (**
-    A helper lemma for below
+    A convenience lemma similar to [Z2Nat.inj_lt]
 *)
 Lemma Z_lt_impl_nat_lt : forall (z1 z2 : Z),
     (0 <= z1 < z2)%Z ->
@@ -68,6 +70,10 @@ Qed.
 Definition sub1_no_underflow (n : int) : bool := 
     ((0 <=? n - 1) && (n - 1 <? n))%sint63.
 
+(**
+    Prove termination for [Function]s where the recursive call is in the
+    [true] branch of [if sub1_no_underflow n then ... else ...]
+*)
 Ltac prove_sub1 :=
     intros;
     unfold sub1_no_underflow in *;

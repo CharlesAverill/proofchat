@@ -1,7 +1,7 @@
 (** * Messages
 
-    In this section, we introduce well-formed usernames and messages, along
-    with proof-carrying operations over them
+    In this section we handle serialization and deserialization of messages
+    between the client and server
 *)
 
 
@@ -16,6 +16,13 @@ Open Scope Z_scope.
 Open Scope sint63_scope.
 Open Scope list_scope.
 Open Scope monad_scope.
+
+(** ** Usernames 
+
+    Usernames have specific properties per the project requirements. This
+    section implements a dependently-typed Record type for usernames and some
+    automation to create them at will.
+*)
 
 (** 
     A proof-carrying username type
@@ -93,6 +100,19 @@ Definition new_username (s : string) : optionE username.
 Defined.
 
 
+(** ** Serialization
+
+    Here we start handling serialization and deserialization of messages
+*)
+
+(** Get a list of bytes from a string - not null-terminated *)
+Definition serialize_string (s : string) : bytes :=
+    (int63_to_bytes (int_len_string s)) ++ (bytes_of_string s).
+
+(** Get a list of bytes from a username - padded to length 32 *)
+Definition serialize_username (u : username) : bytes :=
+    bytes_of_string (pad_string_r u.(Uname) x00 32).
+
 (**
     The message types sent by a client to the server
 *)
@@ -131,12 +151,9 @@ Inductive client_message : Type :=
 *)
 | EXIT  (name : username).
 
-Definition serialize_string (s : string) : bytes :=
-    (int63_to_bytes (int_len_string s)) ++ (bytes_of_string s).
-
-Definition serialize_username (u : username) : bytes :=
-    bytes_of_string (pad_string_r u.(Uname) x00 32).
-
+(** Convert a [client_message] into a list of [byte]s, prepended with 
+    codes representing the message type
+*)
 Definition serialize_client_message (cm : client_message) : bytes :=
     match cm with
     | REG name =>
@@ -149,6 +166,7 @@ Definition serialize_client_message (cm : client_message) : bytes :=
         x03 :: serialize_username name
     end.
 
+(** Convert a list of [byte]s into a [client_message] *)
 Definition deserialize_client_message (b : bytes) : optionE client_message :=
     match b with
     | x00 :: t => 
@@ -239,6 +257,8 @@ Inductive server_message : Type :=
 *)
 | ERR (err : error).
 
+(** Convert a [server_message] into a list of [byte]s, prepended with 
+    codes representing the message type *)
 Definition serialize_server_message (sm : server_message) : bytes :=
     match sm with
     | ACK num_users users =>
@@ -249,6 +269,7 @@ Definition serialize_server_message (sm : server_message) : bytes :=
         x02 :: int63_to_bytes (int_of_error err)
     end.
 
+(** Convert a list of [byte]s into a [server_message] *)
 Definition deserialize_server_message (b : bytes) : optionE server_message :=
     match b with
     | x00 :: t =>
@@ -263,6 +284,9 @@ Definition deserialize_server_message (b : bytes) : optionE server_message :=
     | _ => fail "x"
     end.
 
+(** Sends a message to a socket, checking for the case where only some of the
+    message was transmitted. Will attempt to send the remaining bytes (recursively)
+    [fuel] times *)
 Function resend 
         (fuel : int) (n_sent : int)
         (sockfd : file_descr) (message : bytes)
@@ -281,11 +305,6 @@ Function resend
     prove_sub1.
 Defined.
 
-Definition send_message 
-        (sockfd : file_descr) (message : bytes) : optionE unit :=
-    let len_msg := int_len_list message in
-    let n_sent := send sockfd message 0 len_msg [] in
-    if n_sent <=? len_msg then
-        resend 100 n_sent sockfd message len_msg
-    else
-        SomeE tt.
+(** Wrapper for [resend] *)
+Definition send_message (sockfd : file_descr) (message : bytes) : optionE unit :=
+    resend 100 0 sockfd message (int_len_list message).

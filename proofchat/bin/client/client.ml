@@ -218,12 +218,6 @@ let new_username s =
           then NoneE "Username length must be in range [1..32]"
           else NoneE "Username cannot contain spaces")) __
 
-type client_message =
-| REG of username
-| MESG of string
-| PMSG of string * username
-| EXIT of username
-
 (** val serialize_string : string -> bytes **)
 
 let serialize_string s =
@@ -234,6 +228,12 @@ let serialize_string s =
 
 let serialize_username u =
   bytes_of_string (pad_string_r u '\x00' (Uint63.of_int (32)))
+
+type client_message =
+| REG of username
+| MESG of string
+| PMSG of string * username
+| EXIT of username
 
 (** val serialize_client_message : client_message -> bytes **)
 
@@ -275,11 +275,8 @@ let resend x x0 x1 x2 x3 =
 (** val send_message : Unix.file_descr -> bytes -> unit optionE **)
 
 let send_message sockfd message =
-  let len_msg = int_len_list message in
-  let n_sent = send sockfd message (Uint63.of_int (0)) len_msg [] in
-  if lesb n_sent len_msg
-  then resend (Uint63.of_int (100)) n_sent sockfd message len_msg
-  else SomeE ()
+  resend (Uint63.of_int (100)) (Uint63.of_int (0)) sockfd message
+    (int_len_list message)
 
 (** val client : string -> int -> unit optionE **)
 
