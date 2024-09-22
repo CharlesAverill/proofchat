@@ -1,4 +1,4 @@
-(** OCaml Types
+(** * OCaml Types
 
     A collection of extraction facilities to streamline extraction to OCaml.
     Also includes references to OCaml functions that deal with things like

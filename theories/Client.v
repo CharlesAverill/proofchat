@@ -1,4 +1,4 @@
-(** Client
+(** * Client
     
     In this section, we define program logic for client connections
 *)

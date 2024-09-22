@@ -1,4 +1,4 @@
-(** Server
+(** * Server
     
     In this section, we define program logic for the host server
 *)
