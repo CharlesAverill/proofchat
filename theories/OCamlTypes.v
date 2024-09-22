@@ -31,6 +31,8 @@ Axiom print_int : int -> unit.
 Axiom print_endline : string -> unit.
 Axiom socket : socket_domain -> socket_type -> int -> file_descr.
 Axiom connect : file_descr -> sockaddr -> unit.
+Axiom bind : file_descr -> sockaddr -> unit.
+Axiom listen : file_descr -> int -> unit.
 Axiom send : file_descr -> bytes -> int -> int -> list msg_flag -> int.
 Axiom close : file_descr -> unit.
 Axiom string_of_int : int -> string.

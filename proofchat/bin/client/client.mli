@@ -40,10 +40,6 @@ val ascii_of_nat : nat -> char
 
 
 
-type 'x optionE =
-| SomeE of 'x
-| NoneE of string
-
 val add : Uint63.t -> Uint63.t -> Uint63.t
 
 val sub : Uint63.t -> Uint63.t -> Uint63.t
@@ -51,6 +47,10 @@ val sub : Uint63.t -> Uint63.t -> Uint63.t
 val ltsb : Uint63.t -> Uint63.t -> bool
 
 val lesb : Uint63.t -> Uint63.t -> bool
+
+type 'x optionE =
+| SomeE of 'x
+| NoneE of string
 
 type bytes = char list
 

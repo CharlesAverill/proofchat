@@ -1,0 +1,4 @@
+(executable
+ (public_name proofchat.client)
+ (name main)
+ (libraries proofchat unix))

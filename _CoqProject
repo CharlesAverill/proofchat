@@ -6,4 +6,5 @@ theories/StringTheory.v
 theories/Monads.v
 theories/Messages.v
 theories/Client.v
+theories/Server.v
 theories/PCExtract.v

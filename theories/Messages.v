@@ -17,7 +17,6 @@ Open Scope sint63_scope.
 Open Scope list_scope.
 Open Scope monad_scope.
 
-
 (** 
     A proof-carrying username type
 *)
@@ -150,6 +149,23 @@ Definition serialize_client_message (cm : client_message) : bytes :=
         x03 :: serialize_username name
     end.
 
+Definition deserialize_client_message (b : bytes) : optionE client_message :=
+    match b with
+    | x00 :: t => 
+        uname <- new_username (string_of_bytes t) ;;
+        return (REG uname)
+    | x01 :: t => return (MESG (string_of_bytes t))
+    | x02 :: t =>
+        name_bytes <- first_n t 32 ;;
+        uname <- new_username (string_of_bytes name_bytes) ;;
+        msg_bytes <- last_n t (int_len_list t - 32) ;;
+        return (PMSG (string_of_bytes msg_bytes) uname)
+    | x03 :: t => 
+        uname <- new_username (string_of_bytes t) ;;
+        return (EXIT uname)
+    | _ => NoneE ("Client message code not recognized: " ++ (string_of_bytes b))
+    end.
+
 (**
     Types of server errors that can be sent to clients
 *)
@@ -222,6 +238,30 @@ Inductive server_message : Type :=
         depending on errorcode.
 *)
 | ERR (err : error).
+
+Definition serialize_server_message (sm : server_message) : bytes :=
+    match sm with
+    | ACK num_users users =>
+        x00 :: (int63_to_bytes num_users) ++ (List.concat (List.map serialize_username users))
+    | MSG name message =>
+        x01 :: serialize_username name ++ serialize_string message
+    | ERR err =>
+        x02 :: int63_to_bytes (int_of_error err)
+    end.
+
+Definition deserialize_server_message (b : bytes) : optionE server_message :=
+    match b with
+    | x00 :: t =>
+        num_users_bytes <- first_n t 8 ;;
+        users_bytes <- last_n t (int_len_list t - 8) ;;
+        let num_users := bytes_to_int63 num_users_bytes in
+        usernames_bytes <- divide byte t 32 num_users ;;
+        let option_usernames := List.map 
+            (fun b => new_username (string_of_bytes b)) usernames_bytes in
+        usernames <- strip_options option_usernames ;;
+        return (ACK num_users usernames)
+    | _ => fail "x"
+    end.
 
 Function resend 
         (fuel : int) (n_sent : int)

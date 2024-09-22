@@ -1,0 +1,87 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Proofchat.theories.Server</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Proofchat.theories.Server</h1>
+
+<div class="code">
+</div>
+
+<div class="doc">
+Server
+
+<div class="paragraph"> </div>
+
+    In this section, we define program logic for the host server
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.Messages.html#"><span class="id" title="library">Messages</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.Monads.html#"><span class="id" title="library">Monads</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.funind.Recdef.html#"><span class="id" title="library">Recdef</span></a>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">monad_scope</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+    The internal loop of our client sending thread
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="server_send_thread_internal" class="idref" href="#server_send_thread_internal"><span class="id" title="definition">server_send_thread_internal</span></a> (<span class="id" title="var">_</span> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a>) : <a class="idref" href="Proofchat.theories.Monads.html#optionE"><span class="id" title="inductive">optionE</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.OCamlTypes.html#repeat_until_timeout"><span class="id" title="lemma">repeat_until_timeout</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Numbers.Cyclic.Int63.Sint63.html#max_int"><span class="id" title="definition">max_int</span></a> (<span class="id" title="keyword">fun</span> <span class="id" title="var">_</span> ⇒ <a class="idref" href="Proofchat.theories.Monads.html#SomeE"><span class="id" title="constructor">SomeE</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#tt"><span class="id" title="constructor">tt</span></a>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+    Wraps up all client logic: port binding, threading, etc.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="server" class="idref" href="#server"><span class="id" title="definition">server</span></a> (<a id="host:1" class="idref" href="#host:1"><span class="id" title="binder">host</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>) (<a id="portno:2" class="idref" href="#portno:2"><span class="id" title="binder">portno</span></a> : <a class="idref" href="Proofchat.theories.Sockets.html#port"><span class="id" title="definition">port</span></a>) : <a class="idref" href="Proofchat.theories.Monads.html#optionE"><span class="id" title="inductive">optionE</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="socket_fd:3" class="idref" href="#socket_fd:3"><span class="id" title="binder">socket_fd</span></a> := <a class="idref" href="Proofchat.theories.OCamlTypes.html#socket"><span class="id" title="axiom">socket</span></a> <a class="idref" href="Proofchat.theories.Sockets.html#PF_INET"><span class="id" title="constructor">PF_INET</span></a> <a class="idref" href="Proofchat.theories.Sockets.html#SOCK_STREAM"><span class="id" title="constructor">SOCK_STREAM</span></a> 0 <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="socket_addr:4" class="idref" href="#socket_addr:4"><span class="id" title="binder">socket_addr</span></a> := <a class="idref" href="Proofchat.theories.Sockets.html#ADDR_INET"><span class="id" title="constructor">ADDR_INET</span></a> (<a class="idref" href="Proofchat.theories.OCamlTypes.html#inet_addr_of_string"><span class="id" title="axiom">inet_addr_of_string</span></a> <a class="idref" href="Proofchat.theories.Server.html#host:1"><span class="id" title="variable">host</span></a>) <a class="idref" href="Proofchat.theories.Server.html#portno:2"><span class="id" title="variable">portno</span></a> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">let</span></a><a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">×</span></a> <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">_</span></a> <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">≤</span></a> <a class="idref" href="Proofchat.theories.OCamlTypes.html#print_endline"><span class="id" title="axiom">print_endline</span></a> ("Binding socket " <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#169ad156fbc6036a53a0338819a2b301"><span class="id" title="notation">++</span></a> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#169ad156fbc6036a53a0338819a2b301"><span class="id" title="notation">(</span></a><a class="idref" href="Proofchat.theories.StringTheory.html#string_of_socket_addr"><span class="id" title="definition">string_of_socket_addr</span></a> <a class="idref" href="Proofchat.theories.Server.html#socket_addr:4"><span class="id" title="variable">socket_addr</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#169ad156fbc6036a53a0338819a2b301"><span class="id" title="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#169ad156fbc6036a53a0338819a2b301"><span class="id" title="notation">++</span></a> " as " <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#169ad156fbc6036a53a0338819a2b301"><span class="id" title="notation">++</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#169ad156fbc6036a53a0338819a2b301"><span class="id" title="notation">(</span></a><a class="idref" href="Proofchat.theories.StringTheory.html#string_of_socket_addr"><span class="id" title="definition">string_of_socket_addr</span></a> (<a class="idref" href="Proofchat.theories.OCamlTypes.html#getsockname"><span class="id" title="axiom">getsockname</span></a> <a class="idref" href="Proofchat.theories.Server.html#socket_fd:3"><span class="id" title="variable">socket_fd</span></a>)<a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#169ad156fbc6036a53a0338819a2b301"><span class="id" title="notation">)</span></a>) <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">#;</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">let</span></a><a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">×</span></a> <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">_</span></a> <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">≤</span></a> <a class="idref" href="Proofchat.theories.OCamlTypes.html#bind"><span class="id" title="axiom">bind</span></a> <a class="idref" href="Proofchat.theories.Server.html#socket_fd:3"><span class="id" title="variable">socket_fd</span></a> <a class="idref" href="Proofchat.theories.Server.html#socket_addr:4"><span class="id" title="variable">socket_addr</span></a> <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">#;</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">let</span></a><a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">×</span></a> <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">_</span></a> <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">≤</span></a> <a class="idref" href="Proofchat.theories.OCamlTypes.html#listen"><span class="id" title="axiom">listen</span></a> <a class="idref" href="Proofchat.theories.Server.html#socket_fd:3"><span class="id" title="variable">socket_fd</span></a> 1 <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">#;</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">let</span></a><a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">×</span></a> <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">_</span></a> <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">≤</span></a> <a class="idref" href="Proofchat.theories.OCamlTypes.html#sleep"><span class="id" title="axiom">sleep</span></a> 100 <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">#;</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">let</span></a><a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">×</span></a> <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">_</span></a> <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">≤</span></a> <a class="idref" href="Proofchat.theories.OCamlTypes.html#print_endline"><span class="id" title="axiom">print_endline</span></a> "Closing client connection" <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">#;</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">let</span></a><a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">×</span></a> <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">_</span></a> <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">≤</span></a> <a class="idref" href="Proofchat.theories.OCamlTypes.html#close"><span class="id" title="axiom">close</span></a> <a class="idref" href="Proofchat.theories.Server.html#socket_fd:3"><span class="id" title="variable">socket_fd</span></a> <a class="idref" href="Proofchat.theories.Monads.html#3af0b78a7fcef553558137a00f6c6142"><span class="id" title="notation">#;</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Proofchat.theories.Monads.html#::monad_scope:'return'_x"><span class="id" title="notation">return</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#tt"><span class="id" title="constructor">tt</span></a>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>
