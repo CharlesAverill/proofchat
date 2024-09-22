@@ -34,6 +34,7 @@ Axiom connect : file_descr -> sockaddr -> unit.
 Axiom bind : file_descr -> sockaddr -> unit.
 Axiom listen : file_descr -> int -> unit.
 Axiom send : file_descr -> bytes -> int -> int -> list msg_flag -> int.
+Axiom accept : file_descr -> file_descr * sockaddr.
 Axiom close : file_descr -> unit.
 Axiom string_of_int : int -> string.
 Axiom sleep : int -> unit.

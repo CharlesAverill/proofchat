@@ -270,9 +270,9 @@ Function resend
         {measure (fun x => (Z.to_nat (to_Z x))) fuel}
         : optionE unit :=
     if sub1_no_underflow fuel then
-        (* let* _ <= print_endline ("Sent " ++ (string_of_int n_sent) ++ " bytes") #; *)
+        let* _ <= print_endline ("Sent " ++ (string_of_int n_sent) ++ " bytes") #;
         let n_sent' := send sockfd message n_sent (len_msg - n_sent) [] in
-        if n_sent + n_sent' <=? len_msg then
+        if n_sent + n_sent' <? len_msg then
             resend (fuel - 1) (n_sent + n_sent') sockfd message len_msg
         else
             SomeE tt

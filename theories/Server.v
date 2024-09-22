@@ -26,7 +26,10 @@ Definition server (host : string) (portno : port) : optionE unit :=
         (string_of_socket_addr (getsockname socket_fd))) #;
     let* _ <= bind socket_fd socket_addr #;
     (* Wait for and accept any incoming TCP connection requests. *)
-    let* _ <= listen socket_fd 1 #;
+    let* _ <= listen socket_fd 10 #;
+    let* _ <= print_endline "Server started" #;
+    match accept socket_fd with (x, y) =>
+    let* _ <= print_endline "accepted" #;
     let* _ <= sleep 100 #;
     (* Receive ACK from server *)
     (* Display chatroom information to user output *)
@@ -34,4 +37,4 @@ Definition server (host : string) (portno : port) : optionE unit :=
     (* Wait for chat messages from server *)
     let* _ <= print_endline "Closing client connection" #;
     let* _ <= close socket_fd #;
-    return tt.
+    return tt end.

@@ -252,16 +252,21 @@ let resend x x0 x1 x2 x3 =
   let rec hrec fuel n_sent sockfd message len_msg _ =
     (if sub1_no_underflow fuel
      then (fun _ ->
-            (if lesb
-                  (add n_sent
-                    (send sockfd message n_sent (sub len_msg n_sent) []))
-                  len_msg
-             then (fun _ ->
-                    hrec (sub fuel (Uint63.of_int (1)))
-                      (add n_sent
-                        (send sockfd message n_sent (sub len_msg n_sent) []))
-                      sockfd message len_msg __)
-             else (fun _ -> SomeE ())) __)
+            (let () =
+               print_endline
+                 ((^) "Sent " ((^) (string_of_int n_sent) " bytes"))
+             in
+             (fun _ ->
+             (if ltsb
+                   (add n_sent
+                     (send sockfd message n_sent (sub len_msg n_sent) []))
+                   len_msg
+              then (fun _ ->
+                     hrec (sub fuel (Uint63.of_int (1)))
+                       (add n_sent
+                         (send sockfd message n_sent (sub len_msg n_sent) []))
+                       sockfd message len_msg __)
+              else (fun _ -> SomeE ())) __)) __)
      else (fun _ -> NoneE
             ((^) "Timed out while sending message '"
               ((^) (string_of_bytes message) "'")))) __

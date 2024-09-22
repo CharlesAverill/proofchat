@@ -29,6 +29,7 @@ Extract Inlined Constant getsockname => "Unix.getsockname".
 Extract Inlined Constant inet_addr => "Unix.inet_addr".
 Extract Inlined Constant file_descr => "Unix.file_descr".
 Extract Inlined Constant connect => "Unix.connect".
+Extract Inlined Constant accept => "Unix.accept".
 Extract Inlined Constant bind => "Unix.bind".
 Extract Inlined Constant listen => "Unix.listen".
 Extract Constant send => "(fun a b c d e -> Unix.send a (Proofchat.Pfbytes.bytes_of_byte_list b) c d e)".

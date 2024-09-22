@@ -25,7 +25,10 @@ let server host portno =
           ((^) " as " (string_of_socket_addr (Unix.getsockname socket_fd)))))
   in
   let () = Unix.bind socket_fd socket_addr in
-  let () = Unix.listen socket_fd (Uint63.of_int (1)) in
+  let () = Unix.listen socket_fd (Uint63.of_int (10)) in
+  let () = print_endline "Server started" in
+  let (_, _) = Unix.accept socket_fd in
+  let () = print_endline "accepted" in
   let () = Unix.sleep (Uint63.of_int (100)) in
   let () = print_endline "Closing client connection" in
   let () = Unix.close socket_fd in SomeE ()
