@@ -48,6 +48,17 @@ make install
 ```
 
 
-## Documentation
+## To extract
 
-TBD
+Simply run `make` in the root directory to compile the contents of [theories](theories).
+
+The extracted contents are placed in [proofchat](proofchat).
+Here, run `dune build` to compile OCaml binaries for the client and server.
+
+The client and server can be started via `dune exec proofchat.client`
+and `dune exec proofchat.server`, respectively.
+
+## Verification
+
+To be approached. I'm mostly going to target the involution of my serialization
+and deserialization routines.

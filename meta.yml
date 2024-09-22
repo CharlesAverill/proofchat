@@ -31,26 +31,25 @@ supported_coq_versions:
   text: 8.19.1 or later
   opam: '{(>= "8.19.1")}'
 
-dependencies:
-- opam:
-    name: coq-mathcomp-ssreflect
-    version: '{>= "2.0"}'
-  description: |-
-    [MathComp](https://math-comp.github.io) 2.0 or later (`ssreflect` suffices)
-- opam:
-    name: coq-hierarchy-builder
-    version: '{>= "1.4.0"}'
-  description: |-
-    [Hierarchy Builder](https://github.com/math-comp/hierarchy-builder) 1.4.0 or later
-
 tested_coq_opam_versions:
-- version: '8.19'
+- version: '8.19.1'
 
 keywords:
 - name: TCP
 
 documentation: |-
-  ## Documentation
-  
-  TBD
+  ## To extract
+
+  Simply run `make` in the root directory to compile the contents of [theories](theories).
+
+  The extracted contents are placed in [proofchat](proofchat).
+  Here, run `dune build` to compile OCaml binaries for the client and server.
+
+  The client and server can be started via `dune exec proofchat.client`
+  and `dune exec proofchat.server`, respectively.
+
+  ## Verification
+
+  To be approached. I'm mostly going to target the involution of my serialization
+  and deserialization routines.
 ---
