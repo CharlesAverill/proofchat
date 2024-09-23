@@ -1,10 +1,12 @@
-(** * Sockets
+(** * Unix
 
-    Replicating socket behavior from OCaml's Unix module
+    Replicating behaviors from OCaml's Unix module
 *)
 
 Require Export String.
 Require Export Coq.Numbers.Cyclic.Int63.Sint63.
+
+(** ** Sockets *)
 
 Axiom file_descr : Type.
 Axiom inet_addr : Type.
@@ -30,3 +32,7 @@ Inductive msg_flag : Type :=
 | MSG_OOB
 | MSG_DONTROUTE
 | MSG_PEEK.
+
+(** ** Threads *)
+
+Axiom thread : Type.

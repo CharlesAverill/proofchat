@@ -22,7 +22,7 @@
 </div>
 
 <div class="doc">
-<a id="lab10"></a><h1 class="section">Extraction</h1>
+<a id="lab13"></a><h1 class="section">Extraction</h1>
 
 
 <div class="paragraph"> </div>
@@ -38,7 +38,7 @@
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.Client.html#"><span class="id" title="library">Client</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.Server.html#"><span class="id" title="library">Server</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.Monads.html#"><span class="id" title="library">Monads</span></a>.<br/>
-<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.Sockets.html#"><span class="id" title="library">Sockets</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.Unix.html#"><span class="id" title="library">Unix</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.extraction.ExtrOcamlBasic.html#"><span class="id" title="library">ExtrOcamlBasic</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.extraction.ExtrOcamlNativeString.html#"><span class="id" title="library">ExtrOcamlNativeString</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.extraction.ExtrOCamlInt63.html#"><span class="id" title="library">ExtrOCamlInt63</span></a>.<br/>
@@ -48,9 +48,17 @@
 <span class="id" title="keyword">Unset</span> <span class="id" title="keyword">Extraction</span> <span class="id" title="var">Optimize</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a id="lab14"></a><h2 class="section">Functions</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">read_line</span> ⇒ "read_line".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_int</span> ⇒ "print_int".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_string</span> ⇒ "print_string".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_bytes</span> ⇒ "(fun b -&gt; print_bytes (Proofchat.Pfbytes.bytes_of_char_list b))".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_endline</span> ⇒ "print_endline".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">string_of_int</span> ⇒ "string_of_int".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">socket</span> ⇒ "Unix.socket".<br/>
@@ -64,23 +72,61 @@
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">accept</span> ⇒ "Unix.accept".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">bind</span> ⇒ "Unix.bind".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">listen</span> ⇒ "Unix.listen".<br/>
-<span class="id" title="keyword">Extract</span> <span class="id" title="var">Constant</span> <span class="id" title="var">send</span> ⇒ "(fun a b c d e -&gt; Unix.send a (Proofchat.Pfbytes.bytes_of_byte_list b) c d e)".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Constant</span> <span class="id" title="var">send</span> ⇒ "(fun a b c d e -&gt; Unix.send a (Proofchat.Pfbytes.bytes_of_char_list b) c d e)".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Constant</span> <span class="id" title="var">recv</span> ⇒ "Proofchat.Pfbytes.functional_read".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">close</span> ⇒ "Unix.close".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">int63_to_bytes</span> ⇒ "Proofchat.Pfbytes.int63_to_bytes".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">bytes_to_int63</span> ⇒ "Proofchat.Pfbytes.bytes_to_int63".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">create</span> ⇒ "Thread.create".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">join</span> ⇒ "Thread.join".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">exit</span> ⇒ "Thread.exit".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Constant</span> <span class="id" title="var">keep</span> ⇒ "(fun _ -&gt; ())".<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a id="lab15"></a><h2 class="section">Server state</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">init_connections</span> ⇒ "Proofchat.Serverstate.init_connections".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">add_connection</span> ⇒ "Proofchat.Serverstate.add_connection".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">remove_connection</span> ⇒ "Proofchat.Serverstate.remove_connection".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">get_connection</span> ⇒ "Proofchat.Serverstate.get_connection".<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab16"></a><h2 class="section">Types</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">port</span> ⇒ "int".<br/>
-<span class="id" title="keyword">Extract</span> <span class="id" title="keyword">Inductive</span> <a class="idref" href="Proofchat.theories.Sockets.html#socket_domain"><span class="id" title="inductive">socket_domain</span></a> ⇒ <br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="keyword">Inductive</span> <a class="idref" href="Proofchat.theories.Unix.html#socket_domain"><span class="id" title="inductive">socket_domain</span></a> ⇒ <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;"Unix.socket_domain" [ "Unix.PF_UNIX" "Unix.PF_INET" "Unix.PF_INET6" ].<br/>
-<span class="id" title="keyword">Extract</span> <span class="id" title="keyword">Inductive</span> <a class="idref" href="Proofchat.theories.Sockets.html#socket_type"><span class="id" title="inductive">socket_type</span></a> ⇒<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="keyword">Inductive</span> <a class="idref" href="Proofchat.theories.Unix.html#socket_type"><span class="id" title="inductive">socket_type</span></a> ⇒<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;"Unix.socket_type" [ "Unix.SOCK_STREAM" "Unix.SOCK_DGRAM" "Unix.SOCK_RAW" "Unix.SOCK_SEQPACKET" ].<br/>
-<span class="id" title="keyword">Extract</span> <span class="id" title="keyword">Inductive</span> <a class="idref" href="Proofchat.theories.Sockets.html#sockaddr"><span class="id" title="inductive">sockaddr</span></a> ⇒<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="keyword">Inductive</span> <a class="idref" href="Proofchat.theories.Unix.html#sockaddr"><span class="id" title="inductive">sockaddr</span></a> ⇒<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;"Unix.sockaddr" [ "Unix.ADDR_UNIX" "Unix.ADDR_INET" ].<br/>
-<span class="id" title="keyword">Extract</span> <span class="id" title="keyword">Inductive</span> <a class="idref" href="Proofchat.theories.Sockets.html#msg_flag"><span class="id" title="inductive">msg_flag</span></a> ⇒<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="keyword">Inductive</span> <a class="idref" href="Proofchat.theories.Unix.html#msg_flag"><span class="id" title="inductive">msg_flag</span></a> ⇒<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;"Unix.msg_flag" [ "Unix.MSG_OOB" "Unix.MSG_DONTROUTE" "Unix.MSG_PEEK" ].<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">inet_addr</span> ⇒ "Unix.inet_addr".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">file_descr</span> ⇒ "Unix.file_descr".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">thread</span> ⇒ "Thread.t".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="keyword">Inductive</span> <a class="idref" href="Proofchat.theories.Server.html#client_connection"><span class="id" title="record">client_connection</span></a> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;"Proofchat.Serverstate.client_connection" <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;[ "" ].<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a id="lab17"></a><h2 class="section">Extraction</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Set</span> <span class="id" title="keyword">Extraction</span> <span class="id" title="var">Output</span> <span class="id" title="var">Directory</span> "proofchat/bin/client".<br/>
 <span class="id" title="keyword">Recursive Extraction</span> <span class="id" title="var">client</span>.<br/>
 <span class="id" title="keyword">Extraction</span> "client.ml" <span class="id" title="var">client</span>.<br/>

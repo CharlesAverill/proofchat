@@ -66,21 +66,19 @@ Fixpoint int_len_list {X : Type} (l : list X) : int :=
     | _ :: t => 1 + int_len_list t
     end.
 
-(* Theorem int_len_list_nat : forall (X : Type) (l : list X),
+Theorem int_len_list_nat : forall (X : Type) (l : list X),
+    Z.of_nat (List.length l) < to_Z max_int ->
     (0 <=? int_len_list l = true)%sint63.
 Proof.
-    induction l.
+    intros. induction l.
     - reflexivity.
-    - simpl. apply leb_spec. apply leb_spec in IHl.
-      destruct (int_len_list l <? max_int)%sint63 eqn:E.
-      -- change (to_Z 0) with 0 in *.
-         transitivity 1. lia. rewrite to_Z_add;
-         change (to_Z 1) with 1. lia.
-         split. transitivity 0. unfold to_Z; simpl; lia.
-         lia. rewrite Z.add_comm. apply Ztac.Zlt_le_add_1.
-         now apply ltb_spec.
-      -- lia.
-Qed. *)
+    - simpl. apply leb_spec. simpl in H.
+        rewrite Zpos_P_of_succ_nat in H.
+        apply Z.lt_succ_l in H.
+        specialize (IHl H).
+      apply leb_spec in IHl.
+      etransitivity. eassumption.
+Abort.
 
 (** Get a list of [byte]s from a [string] *)
 Fixpoint bytes_of_string (s : string) : bytes :=
@@ -96,6 +94,14 @@ Fixpoint string_of_bytes (b : bytes) : string :=
     | h :: t => String (ascii_of_byte h) (string_of_bytes t)
     end.
 
+Theorem bytes_of_string_of_bytes : forall (b : bytes),
+    bytes_of_string (string_of_bytes b) = b.
+Proof.
+    induction b; simpl.
+    - reflexivity.
+    - now rewrite byte_of_ascii_of_byte, IHb.
+Qed.
+
 (** OCaml int string length *)
 Definition int_len_string (s : string) : int :=
     int_len_list (bytes_of_string s).
@@ -110,9 +116,22 @@ Function create_list {X : Type} (x : X) (n : int)
     prove_sub1.
 Defined.
 
+Theorem create_list_n : forall (X : Type) (x : X) (n : int),
+    int_len_list (create_list X x n) = n.
+Abort.
+
 (** Pad a string on the right with [b] until the entire string has length [target_len] *)
 Definition pad_string_r (s : string) (b : byte) (target_len : int) : string :=
-    s ++ (string_of_bytes (create_list byte b (target_len - int_len_string s + 1))). 
+    s ++ (string_of_bytes (create_list byte b (target_len - int_len_string s))).
+
+Theorem pad_string_r_len : forall (s : string) (b : byte) (n : int),
+    int_len_string (pad_string_r s b n) = n.
+Proof.
+    induction s; intros.
+    - unfold pad_string_r. simpl. cbv [int_len_string].
+      simpl. rewrite sub_of_Z. change (to_Z 0) with 0.
+      rewrite Z.sub_0_r, of_to_Z, bytes_of_string_of_bytes.
+Abort.
 
 (** Trim all occurances of [b] from the right side of [s] *)
 Definition trim_r (s : string) (b : byte) : string :=

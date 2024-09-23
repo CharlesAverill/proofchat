@@ -4,7 +4,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link href="coqdoc.css" rel="stylesheet" type="text/css" />
-<title>Proofchat.theories.Sockets</title>
+<title>Proofchat.theories.Unix</title>
 </head>
 
 <body>
@@ -16,18 +16,18 @@
 
 <div id="main">
 
-<h1 class="libtitle">Library Proofchat.theories.Sockets</h1>
+<h1 class="libtitle">Library Proofchat.theories.Unix</h1>
 
 <div class="code">
 </div>
 
 <div class="doc">
-<a id="lab1"></a><h1 class="section">Sockets</h1>
+<a id="lab1"></a><h1 class="section">Unix</h1>
 
 
 <div class="paragraph"> </div>
 
-    Replicating socket behavior from OCaml's Unix module
+    Replicating behaviors from OCaml's Unix module
 
 </div>
 <div class="code">
@@ -35,6 +35,15 @@
 <br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#"><span class="id" title="library">String</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Numbers.Cyclic.Int63.Sint63.html#"><span class="id" title="library">Coq.Numbers.Cyclic.Int63.Sint63</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab2"></a><h2 class="section">Sockets</h2>
+
+</div>
+<div class="code">
 
 <br/>
 <span class="id" title="keyword">Axiom</span> <a id="file_descr" class="idref" href="#file_descr"><span class="id" title="axiom">file_descr</span></a> : <span class="id" title="keyword">Type</span>.<br/>
@@ -59,13 +68,25 @@
 <br/>
 <span class="id" title="keyword">Inductive</span> <a id="sockaddr" class="idref" href="#sockaddr"><span class="id" title="definition, inductive"><span id="sockaddr_rect" class="id"><span id="sockaddr_ind" class="id"><span id="sockaddr_rec" class="id"><span id="sockaddr_sind" class="id">sockaddr</span></span></span></span></span></a> : <span class="id" title="keyword">Type</span> :=<br/>
 | <a id="ADDR_UNIX" class="idref" href="#ADDR_UNIX"><span class="id" title="constructor">ADDR_UNIX</span></a> (<a id="s:9" class="idref" href="#s:9"><span class="id" title="binder">s</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a>)<br/>
-| <a id="ADDR_INET" class="idref" href="#ADDR_INET"><span class="id" title="constructor">ADDR_INET</span></a> (<a id="addr:10" class="idref" href="#addr:10"><span class="id" title="binder">addr</span></a> : <a class="idref" href="Proofchat.theories.Sockets.html#inet_addr"><span class="id" title="axiom">inet_addr</span></a>) (<a id="p:11" class="idref" href="#p:11"><span class="id" title="binder">p</span></a> : <a class="idref" href="Proofchat.theories.Sockets.html#port"><span class="id" title="definition">port</span></a>).<br/>
+| <a id="ADDR_INET" class="idref" href="#ADDR_INET"><span class="id" title="constructor">ADDR_INET</span></a> (<a id="addr:10" class="idref" href="#addr:10"><span class="id" title="binder">addr</span></a> : <a class="idref" href="Proofchat.theories.Unix.html#inet_addr"><span class="id" title="axiom">inet_addr</span></a>) (<a id="p:11" class="idref" href="#p:11"><span class="id" title="binder">p</span></a> : <a class="idref" href="Proofchat.theories.Unix.html#port"><span class="id" title="definition">port</span></a>).<br/>
 
 <br/>
 <span class="id" title="keyword">Inductive</span> <a id="msg_flag" class="idref" href="#msg_flag"><span class="id" title="definition, inductive"><span id="msg_flag_rect" class="id"><span id="msg_flag_ind" class="id"><span id="msg_flag_rec" class="id"><span id="msg_flag_sind" class="id">msg_flag</span></span></span></span></span></a> : <span class="id" title="keyword">Type</span> :=<br/>
 | <a id="MSG_OOB" class="idref" href="#MSG_OOB"><span class="id" title="constructor">MSG_OOB</span></a><br/>
 | <a id="MSG_DONTROUTE" class="idref" href="#MSG_DONTROUTE"><span class="id" title="constructor">MSG_DONTROUTE</span></a><br/>
 | <a id="MSG_PEEK" class="idref" href="#MSG_PEEK"><span class="id" title="constructor">MSG_PEEK</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab3"></a><h2 class="section">Threads</h2>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Axiom</span> <a id="thread" class="idref" href="#thread"><span class="id" title="axiom">thread</span></a> : <span class="id" title="keyword">Type</span>.<br/>
 </div>
 </div>
 

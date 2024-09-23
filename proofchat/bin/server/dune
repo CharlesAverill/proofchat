@@ -1,4 +1,4 @@
 (executable
  (public_name proofchat.server)
  (name main)
- (libraries proofchat unix))
+ (libraries proofchat unix threads))

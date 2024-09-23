@@ -11,6 +11,7 @@ Require Import List.
 Import ListNotations.
 Require Export Monads.
 Require Import Recdef.
+Require Import Lia.
 Close Scope nat_scope.
 Open Scope Z_scope.
 Open Scope sint63_scope.
@@ -99,6 +100,13 @@ Definition new_username (s : string) : optionE username.
         exact (NoneE "Username cannot contain spaces").
 Defined.
 
+Definition dummy_username : username.
+    assert (1 <= to_Z (int_len_string "X") <= 32)%Z by
+        (split; unfold to_Z, Uint63.to_Z; simpl; lia).
+    assert (~ InString space "X") by
+        (intro; destruct H0; [discriminate | auto]).
+    exact {|Uname := "X"; ValidLength := H; NoSpaces := H0|}.
+Defined.
 
 (** ** Serialization
 
@@ -183,6 +191,18 @@ Definition deserialize_client_message (b : bytes) : optionE client_message :=
         return (EXIT uname)
     | _ => NoneE ("Client message code not recognized: " ++ (string_of_bytes b))
     end.
+
+Theorem serialize_username_len : forall (u : username),
+    int_len_list (serialize_username u) = 32.
+Proof.
+    intros. unfold serialize_username.
+Abort.
+
+Theorem serialize_REG_len : forall (u : username),
+    int_len_list (serialize_client_message (REG u)) = 33.
+Proof.
+    intros. simpl.
+Abort.
 
 (**
     Types of server errors that can be sent to clients
@@ -294,8 +314,8 @@ Function resend
         {measure (fun x => (Z.to_nat (to_Z x))) fuel}
         : optionE unit :=
     if sub1_no_underflow fuel then
-        let* _ <= print_endline ("Sent " ++ (string_of_int n_sent) ++ " bytes") #;
         let n_sent' := send sockfd message n_sent (len_msg - n_sent) [] in
+        let* _ <= print_endline ("Sent " ++ (string_of_int n_sent') ++ " bytes") #;
         if n_sent + n_sent' <? len_msg then
             resend (fuel - 1) (n_sent + n_sent') sockfd message len_msg
         else
@@ -308,3 +328,7 @@ Defined.
 (** Wrapper for [resend] *)
 Definition send_message (sockfd : file_descr) (message : bytes) : optionE unit :=
     resend 100 0 sockfd message (int_len_list message).
+
+(** Receives a message from a socket *)
+Definition recv_message (sockfd : file_descr) (len : int) : bytes :=
+    let '(_, out) := recv sockfd 0 len [] in out.

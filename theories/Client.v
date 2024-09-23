@@ -12,7 +12,7 @@ Open Scope monad_scope.
     The internal loop of our client sending thread
 *)
 Definition client_send_thread_internal (_ : unit) : optionE unit :=
-    repeat_until_timeout max_int (fun _ => SomeE tt).
+    repeat_until_timeout max_int (fun _ => EarlyStopFailure "not implemented").
 
 (**
     Wraps up all client logic: port binding, threading, etc.

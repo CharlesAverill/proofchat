@@ -21,12 +21,13 @@ Require Export ZArith.
 Require Export Bool.
 
 (** Miscellaneous *)
-Require Export Sockets.
+Require Export Unix.
 Require Export Monads.
 
 (** Functions *)
 Axiom read_line : unit -> string.
 Axiom print_string : string -> unit.
+Axiom print_bytes : bytes -> unit.
 Axiom print_int : int -> unit.
 Axiom print_endline : string -> unit.
 Axiom socket : socket_domain -> socket_type -> int -> file_descr.
@@ -34,6 +35,7 @@ Axiom connect : file_descr -> sockaddr -> unit.
 Axiom bind : file_descr -> sockaddr -> unit.
 Axiom listen : file_descr -> int -> unit.
 Axiom send : file_descr -> bytes -> int -> int -> list msg_flag -> int.
+Axiom recv : file_descr -> int -> int -> list msg_flag -> int * bytes.
 Axiom accept : file_descr -> file_descr * sockaddr.
 Axiom close : file_descr -> unit.
 Axiom string_of_int : int -> string.
@@ -41,6 +43,11 @@ Axiom sleep : int -> unit.
 Axiom inet_addr_of_string : string -> inet_addr.
 Axiom string_of_inet_addr : inet_addr -> string.
 Axiom getsockname : file_descr -> sockaddr.
+Axiom create : forall (X Y : Type), (X -> Y) -> X -> thread.
+Axiom join : thread -> unit.
+Axiom exit : unit -> unit.
+
+Axiom keep : forall (X : Type), X -> unit.
 
 (** These are implemented in Proofchat.Pfbytes, but should be moved to a Coq
     definition soon so that we can prove correctness of deserialization *)
@@ -88,16 +95,23 @@ Ltac prove_sub1 :=
         ]
     end.
 
+(**
+    Dictate the behavior of [repeat_until_timeout]
+*)
+Inductive repeat_until_timeout_code : Type :=
+| Recurse | EarlyStopSuccess | EarlyStopFailure (s : string).
+
 (** 
     Calls a function f until either it terminates with SomeE tt,
     or timeout occurs
 *)
-Function repeat_until_timeout (timeout : int) (f : unit -> optionE unit)
+Function repeat_until_timeout (timeout : int) (f : unit -> repeat_until_timeout_code)
         {measure (fun x => (Z.to_nat (to_Z x))) timeout} : optionE unit :=
     (if sub1_no_underflow timeout then
         match f tt with
-        | SomeE x => SomeE x
-        | NoneE _ => repeat_until_timeout (timeout - 1) f
+        | Recurse => repeat_until_timeout (timeout - 1) f
+        | EarlyStopSuccess => return tt
+        | EarlyStopFailure err => fail err
         end
     else
         NoneE "Timeout occurred")%sint63.

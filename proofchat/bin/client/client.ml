@@ -112,7 +112,7 @@ type bytes = char list
     Unix.file_descr -> bytes -> Uint63.t -> Uint63.t -> Unix.msg_flag list ->
     Uint63.t **)
 
-let send = (fun a b c d e -> Unix.send a (Proofchat.Pfbytes.bytes_of_byte_list b) c d e)
+let send = (fun a b c d e -> Unix.send a (Proofchat.Pfbytes.bytes_of_char_list b) c d e)
 
 (** val sub1_no_underflow : Uint63.t -> bool **)
 
@@ -190,10 +190,7 @@ let create_list x0 x1 =
 (** val pad_string_r : string -> char -> Uint63.t -> string **)
 
 let pad_string_r s b target_len =
-  (^) s
-    (string_of_bytes
-      (create_list b
-        (add (sub target_len (int_len_string s)) (Uint63.of_int (1)))))
+  (^) s (string_of_bytes (create_list b (sub target_len (int_len_string s))))
 
 type username =
   string
@@ -254,7 +251,11 @@ let resend x x0 x1 x2 x3 =
      then (fun _ ->
             (let () =
                print_endline
-                 ((^) "Sent " ((^) (string_of_int n_sent) " bytes"))
+                 ((^) "Sent "
+                   ((^)
+                     (string_of_int
+                       (send sockfd message n_sent (sub len_msg n_sent) []))
+                     " bytes"))
              in
              (fun _ ->
              (if ltsb
