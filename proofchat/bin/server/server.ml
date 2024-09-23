@@ -48,6 +48,30 @@ module N =
   | S n' -> Npos (Pos.of_succ_nat n')
  end
 
+(** val rev : 'a1 list -> 'a1 list **)
+
+let rev l =
+  let rec rev0 = function
+  | [] -> []
+  | x :: l' -> app (rev0 l') (x :: [])
+  in rev0 l
+
+(** val concat : 'a1 list list -> 'a1 list **)
+
+let concat l =
+  let rec concat0 = function
+  | [] -> []
+  | x :: l1 -> app x (concat0 l1)
+  in concat0 l
+
+(** val map : ('a1 -> 'a2) -> 'a1 list -> 'a2 list **)
+
+let map f =
+  let rec map0 = function
+  | [] -> []
+  | a :: t -> (f a) :: (map0 t)
+  in map0
+
 (** val zero : char **)
 
 let zero = '\000'
@@ -86,29 +110,9 @@ let ascii_of_nat a =
 
 
 
-(** val rev : 'a1 list -> 'a1 list **)
-
-let rev l =
-  let rec rev0 = function
-  | [] -> []
-  | x :: l' -> app (rev0 l') (x :: [])
-  in rev0 l
-
-(** val concat : 'a1 list list -> 'a1 list **)
-
-let concat l =
-  let rec concat0 = function
-  | [] -> []
-  | x :: l1 -> app x (concat0 l1)
-  in concat0 l
-
-(** val map : ('a1 -> 'a2) -> 'a1 list -> 'a2 list **)
-
-let map f =
-  let rec map0 = function
-  | [] -> []
-  | a :: t -> (f a) :: (map0 t)
-  in map0
+type 'x optionE =
+| SomeE of 'x
+| NoneE of string
 
 (** val add : Uint63.t -> Uint63.t -> Uint63.t **)
 
@@ -134,10 +138,6 @@ let lesb = Uint63.les
 
 let max_int =
   (Uint63.of_int (4611686018427387903))
-
-type 'x optionE =
-| SomeE of 'x
-| NoneE of string
 
 type bytes = char list
 
@@ -892,25 +892,16 @@ let resend x x0 x1 x2 x3 =
   let rec hrec fuel n_sent sockfd message len_msg _ =
     (if sub1_no_underflow fuel
      then (fun _ ->
-            (let () =
-               print_endline
-                 ((^) "Sent "
-                   ((^)
-                     (string_of_int
-                       (send sockfd message n_sent (sub len_msg n_sent) []))
-                     " bytes"))
-             in
-             (fun _ ->
-             (if ltsb
-                   (add n_sent
-                     (send sockfd message n_sent (sub len_msg n_sent) []))
-                   len_msg
-              then (fun _ ->
-                     hrec (sub fuel (Uint63.of_int (1)))
-                       (add n_sent
-                         (send sockfd message n_sent (sub len_msg n_sent) []))
-                       sockfd message len_msg __)
-              else (fun _ -> SomeE ())) __)) __)
+            (if ltsb
+                  (add n_sent
+                    (send sockfd message n_sent (sub len_msg n_sent) []))
+                  len_msg
+             then (fun _ ->
+                    hrec (sub fuel (Uint63.of_int (1)))
+                      (add n_sent
+                        (send sockfd message n_sent (sub len_msg n_sent) []))
+                      sockfd message len_msg __)
+             else (fun _ -> SomeE ())) __)
      else (fun _ -> NoneE
             ((^) "Timed out while sending message '"
               ((^) (string_of_bytes message) "'")))) __
@@ -922,10 +913,10 @@ let send_message sockfd message =
   resend (Uint63.of_int (100)) (Uint63.of_int (0)) sockfd message
     (int_len_list message)
 
-(** val recv_message : Unix.file_descr -> Uint63.t -> bytes **)
+(** val recv_message : Unix.file_descr -> Uint63.t -> bytes optionE **)
 
 let recv_message sockfd len =
-  let (_, out) = recv sockfd (Uint63.of_int (0)) len [] in out
+  let (_, out) = recv sockfd (Uint63.of_int (0)) len [] in SomeE out
 
 (** val cc_descr :
     Proofchat.Serverstate.client_connection -> Unix.file_descr **)
@@ -943,34 +934,39 @@ let cc_addr = function
 
 let recv_client_message cc =
   let () = print_endline "Accepted, can receive!" in
-  let reg_bytes = recv_message (cc_descr cc) (Uint63.of_int (33)) in
-  (match deserialize_client_message reg_bytes with
-   | SomeE x ->
-     (match x with
-      | REG uname ->
-        (match Proofchat.Serverstate.get_connection uname with
-         | Some _ ->
-           let () =
-             print_endline
-               ((^) uname " tried to join, but username already taken")
-           in
-           SomeE ()
-         | None ->
-           let () = print_endline ((^) uname " has joined") in
-           let cc0 = (uname, (cc_descr cc), (cc_addr cc)) in
-           let () = Proofchat.Serverstate.add_connection cc0 in SomeE ())
-      | MESG _ ->
-        send_message (cc_descr cc)
-          (serialize_server_message (ERR UnknownMessageFormat))
-      | PMSG (_, _) ->
-        send_message (cc_descr cc)
-          (serialize_server_message (ERR UnknownMessageFormat))
-      | EXIT _ ->
+  (match recv_message (cc_descr cc) (Uint63.of_int (33)) with
+   | SomeE reg_bytes ->
+     (match deserialize_client_message reg_bytes with
+      | SomeE x ->
+        (match x with
+         | REG uname ->
+           (match Proofchat.Serverstate.get_connection uname with
+            | Some _ ->
+              let () =
+                print_endline
+                  ((^) uname " tried to join, but username already taken")
+              in
+              (match send_message (cc_descr cc)
+                       (serialize_server_message (ERR UsernameTaken)) with
+               | SomeE _ -> SomeE ()
+               | NoneE err -> NoneE err)
+            | None ->
+              let () = print_endline ((^) uname " has joined") in
+              let cc0 = (uname, (cc_descr cc), (cc_addr cc)) in
+              let () = Proofchat.Serverstate.add_connection cc0 in SomeE ())
+         | MESG _ ->
+           send_message (cc_descr cc)
+             (serialize_server_message (ERR UnknownMessageFormat))
+         | PMSG (_, _) ->
+           send_message (cc_descr cc)
+             (serialize_server_message (ERR UnknownMessageFormat))
+         | EXIT _ ->
+           send_message (cc_descr cc)
+             (serialize_server_message (ERR UnknownMessageFormat)))
+      | NoneE _ ->
         send_message (cc_descr cc)
           (serialize_server_message (ERR UnknownMessageFormat)))
-   | NoneE _ ->
-     send_message (cc_descr cc)
-       (serialize_server_message (ERR UnknownMessageFormat)))
+   | NoneE err -> NoneE err)
 
 (** val server_accept_thread : Unix.file_descr -> unit optionE **)
 

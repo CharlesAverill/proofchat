@@ -228,6 +228,16 @@ Definition int_of_error (e : error) : int :=
     | Error => 5
     end.
 
+Definition string_of_error (e : error) : string :=
+    match e with
+    | UsernameTaken => "This username is already taken"
+    | UsernameTooLong => "Username length must be in range [1..32]"
+    | UsernameHasSpaces => "Username cannot contain spaces"
+    | PmsgTargetNotExists => "The target of your private message does not exist"
+    | UnknownMessageFormat => "Received an unknown message type"
+    | Error => "Unknown error occurred"
+    end.
+
 (**
     Map OCaml integers to errors
 *)
@@ -292,6 +302,9 @@ Definition serialize_server_message (sm : server_message) : bytes :=
 (** Convert a list of [byte]s into a [server_message] *)
 Definition deserialize_server_message (b : bytes) : optionE server_message :=
     match b with
+    (** This case isn't helpful... why should we deserialize 
+        something when we don't even know how many bytes to pull?
+        Below, [recv_ACK] does basically the same thing *)
     | x00 :: t =>
         num_users_bytes <- first_n t 8 ;;
         users_bytes <- last_n t (int_len_list t - 8) ;;
@@ -314,10 +327,12 @@ Function resend
         {measure (fun x => (Z.to_nat (to_Z x))) fuel}
         : optionE unit :=
     if sub1_no_underflow fuel then
-        let n_sent' := send sockfd message n_sent (len_msg - n_sent) [] in
-        let* _ <= print_endline ("Sent " ++ (string_of_int n_sent') ++ " bytes") #;
-        if n_sent + n_sent' <? len_msg then
-            resend (fuel - 1) (n_sent + n_sent') sockfd message len_msg
+        let send_result := n_sent + send sockfd message n_sent (len_msg - n_sent) [] in
+        (* If uncommented, the extractor will call [send] twice, because it tries
+           to unfold [send_result] and put its rvalue in place of all occurrances *)
+        (* let* _ <= print_endline ("Sent " ++ (string_of_int send_result) ++ " bytes") #; *)
+        if send_result <? len_msg then
+            resend (fuel - 1) send_result sockfd message len_msg
         else
             SomeE tt
     else
@@ -330,5 +345,34 @@ Definition send_message (sockfd : file_descr) (message : bytes) : optionE unit :
     resend 100 0 sockfd message (int_len_list message).
 
 (** Receives a message from a socket *)
-Definition recv_message (sockfd : file_descr) (len : int) : bytes :=
-    let '(_, out) := recv sockfd 0 len [] in out.
+Definition recv_message (sockfd : file_descr) (len : int) : optionE bytes :=
+    match recv sockfd 0 len [] with
+    | (_, out) => SomeE out
+    end.
+
+(** Receives an int from a socket *)
+Definition recv_int (sockfd : file_descr) : optionE int :=
+    n_bytes <- recv_message sockfd 8 ;;
+    return bytes_to_int63 (n_bytes).
+
+(** Receives an ACK message *)
+Definition recv_ACK (sockfd : file_descr) 
+        : optionE (int * list username) :=
+    code <- recv_message sockfd 1 ;;
+    _ <- (match code with 
+          | [x00] => SomeE tt
+          | [x02] => 
+            error_code <- recv_int sockfd ;;
+            NoneE (string_of_error (error_of_int error_code))
+          | _ => NoneE ("Tried to receive ACK, got byte " ++ 
+                        string_of_bytes code)
+          end) ;;
+    (* Receive a serialized int63 detailing number of 
+       connected users *)
+    num_users <- recv_int sockfd ;;
+    usernames_bytes <- recv_message sockfd (num_users * 32) ;;
+    usernames_split <- divide byte usernames_bytes 32 num_users ;;
+    let option_usernames := List.map
+        (fun b => new_username (string_of_bytes b)) usernames_split in
+    usernames <- strip_options option_usernames ;;
+    return (num_users, usernames).

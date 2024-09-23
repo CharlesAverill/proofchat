@@ -32,6 +32,9 @@ Definition client (host : string) (portno : port) : optionE unit :=
     (* Send REG message to server *)
     _ <- send_message socket_fd (serialize_client_message (REG uname)) ;;
     (* Receive ACK from server *)
+    users_usernames <-
+        recv_ACK socket_fd ;;
+    let* _ <= sleep 1000 #;
     (* Display chatroom information to user output *)
     (* Wait for user input *)
     (* Wait for chat messages from server *)

@@ -28,7 +28,7 @@ Axiom get_connection : username -> option client_connection.
 Definition recv_client_message (cc : client_connection) : optionE unit :=
     let* _ <= print_endline "Accepted, can receive!" #;
     (* Read 33 bytes - should be a REG message *)
-    let reg_bytes := recv_message cc.(cc_descr) 33 in
+    reg_bytes <- recv_message cc.(cc_descr) 33 ;;
     match (deserialize_client_message reg_bytes) with
     | SomeE (REG uname) =>
         match get_connection uname with
@@ -49,8 +49,8 @@ Definition recv_client_message (cc : client_connection) : optionE unit :=
         | Some _ =>
             let* _ <= print_endline (uname.(Uname) ++ 
                 " tried to join, but username already taken") #;
-            (* _ <- send_message cc.(cc_descr)
-                (serialize_server_message (ERR UsernameTaken)) ;; *)
+            _ <- send_message cc.(cc_descr)
+                (serialize_server_message (ERR UsernameTaken)) ;;
             return tt
         end
     | _ => 

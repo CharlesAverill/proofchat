@@ -19,6 +19,6 @@ theories/Client.vos theories/Client.vok theories/Client.required_vos: theories/C
 theories/Server.vo theories/Server.glob theories/Server.v.beautified theories/Server.required_vo: theories/Server.v theories/Messages.vo theories/Monads.vo
 theories/Server.vio: theories/Server.v theories/Messages.vio theories/Monads.vio
 theories/Server.vos theories/Server.vok theories/Server.required_vos: theories/Server.v theories/Messages.vos theories/Monads.vos
-theories/PCExtract.vo theories/PCExtract.glob theories/PCExtract.v.beautified theories/PCExtract.required_vo: theories/PCExtract.v theories/Extraction.vo theories/StringTheory.vo theories/Client.vo theories/Server.vo theories/Monads.vo theories/Unix.vo
-theories/PCExtract.vio: theories/PCExtract.v theories/Extraction.vio theories/StringTheory.vio theories/Client.vio theories/Server.vio theories/Monads.vio theories/Unix.vio
-theories/PCExtract.vos theories/PCExtract.vok theories/PCExtract.required_vos: theories/PCExtract.v theories/Extraction.vos theories/StringTheory.vos theories/Client.vos theories/Server.vos theories/Monads.vos theories/Unix.vos
+theories/PCExtract.vo theories/PCExtract.glob theories/PCExtract.v.beautified theories/PCExtract.required_vo: theories/PCExtract.v theories/StringTheory.vo theories/Client.vo theories/Server.vo theories/Monads.vo theories/Unix.vo
+theories/PCExtract.vio: theories/PCExtract.v theories/StringTheory.vio theories/Client.vio theories/Server.vio theories/Monads.vio theories/Unix.vio
+theories/PCExtract.vos theories/PCExtract.vok theories/PCExtract.required_vos: theories/PCExtract.v theories/StringTheory.vos theories/Client.vos theories/Server.vos theories/Monads.vos theories/Unix.vos
