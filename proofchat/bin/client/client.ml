@@ -170,10 +170,6 @@ let add = Uint63.add
 
 let sub = Uint63.sub
 
-(** val mul : Uint63.t -> Uint63.t -> Uint63.t **)
-
-let mul = Uint63.mul
-
 (** val eqb : Uint63.t -> Uint63.t -> bool **)
 
 let eqb = Uint63.equal
@@ -232,6 +228,11 @@ let to_Z =
 let min_int =
   (Uint63.of_int (-4611686018427387904))
 
+(** val max_int : Uint63.t **)
+
+let max_int =
+  (Uint63.of_int (4611686018427387903))
+
 (** val to_Z0 : Uint63.t -> z **)
 
 let to_Z0 i =
@@ -286,7 +287,9 @@ let string_of_socket_addr = function
 
 let rec int_len_list = function
 | [] -> (Uint63.of_int (0))
-| _ :: t -> add (Uint63.of_int (1)) (int_len_list t)
+| _ :: t ->
+  let n0 = int_len_list t in
+  if ltsb n0 max_int then add (Uint63.of_int (1)) n0 else max_int
 
 (** val bytes_of_string : string -> bytes **)
 
@@ -389,8 +392,11 @@ let new_username s =
    else (fun _ ->
           let b0 = no_spaces s in
           if b0
-          then NoneE "Username length must be in range [1..32]"
-          else NoneE "Username cannot contain spaces")) __
+          then NoneE
+                 ((^) "Username length must be in range [1..32]: '"
+                   ((^) s "'"))
+          else NoneE ((^) "Username cannot contain spaces: '" ((^) s "'"))))
+    __
 
 (** val serialize_string : string -> bytes **)
 
@@ -460,6 +466,314 @@ let error_of_int n0 =
      | XH -> UsernameTooLong)
   | Zneg _ -> Error
 
+type server_message =
+| ACK of Uint63.t * username list
+| MSG of username * string
+| ERR of error
+
+(** val deserialize_server_message : bytes -> server_message optionE **)
+
+let deserialize_server_message b = match b with
+| [] -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+| b0 :: t ->
+  (match b0 with
+   | '\x00' ->
+     (match first_n t (Uint63.of_int (8)) with
+      | SomeE num_users_bytes ->
+        (match last_n t (sub (int_len_list t) (Uint63.of_int (8))) with
+         | SomeE _ ->
+           let num_users = Proofchat.Pfbytes.bytes_to_int63 num_users_bytes in
+           (match divide t (Uint63.of_int (32)) num_users with
+            | SomeE usernames_bytes ->
+              let option_usernames =
+                map (fun b1 -> new_username (string_of_bytes b1))
+                  usernames_bytes
+              in
+              (match strip_options option_usernames with
+               | SomeE usernames -> SomeE (ACK (num_users, usernames))
+               | NoneE err -> NoneE err)
+            | NoneE err -> NoneE err)
+         | NoneE err -> NoneE err)
+      | NoneE err -> NoneE err)
+   | '\x01' ->
+     (match first_n t (Uint63.of_int (32)) with
+      | SomeE username_bytes ->
+        (match new_username (string_of_bytes username_bytes) with
+         | SomeE uname ->
+           (match last_n t (sub (int_len_list t) (Uint63.of_int (32))) with
+            | SomeE t0 ->
+              (match first_n t0 (Uint63.of_int (8)) with
+               | SomeE len_msg_bytes ->
+                 let len_msg = Proofchat.Pfbytes.bytes_to_int63 len_msg_bytes
+                 in
+                 (match last_n t0 len_msg with
+                  | SomeE msg_bytes ->
+                    SomeE (MSG (uname, (string_of_bytes msg_bytes)))
+                  | NoneE err -> NoneE err)
+               | NoneE err -> NoneE err)
+            | NoneE err -> NoneE err)
+         | NoneE err -> NoneE err)
+      | NoneE err -> NoneE err)
+   | '\x02' ->
+     (match first_n t (Uint63.of_int (8)) with
+      | SomeE err_bytes ->
+        SomeE (ERR
+          (error_of_int (Proofchat.Pfbytes.bytes_to_int63 err_bytes)))
+      | NoneE err -> NoneE err)
+   | '\x03' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x04' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x05' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x06' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x07' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x08' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\t' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\n' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x0b' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x0c' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\r' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x0e' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x0f' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x10' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x11' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x12' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x13' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x14' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x15' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x16' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x17' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x18' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x19' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x1a' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x1b' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x1c' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x1d' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x1e' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x1f' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | ' ' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '!' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '"' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '#' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '$' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '%' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '&' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\'' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '(' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | ')' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '*' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '+' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | ',' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '-' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '.' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '/' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '0' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '1' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '2' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '3' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '4' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '5' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '6' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '7' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '8' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '9' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | ':' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | ';' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '<' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '=' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '>' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '?' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '@' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'A' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'B' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'C' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'D' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'E' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'F' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'G' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'H' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'I' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'J' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'K' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'L' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'M' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'N' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'O' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'P' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'Q' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'R' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'S' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'T' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'U' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'V' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'W' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'X' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'Y' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'Z' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '[' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\\' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | ']' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '^' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '_' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '`' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'a' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'b' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'c' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'd' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'e' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'f' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'g' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'h' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'i' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'j' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'k' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'l' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'm' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'n' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'o' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'p' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'q' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'r' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 's' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 't' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'u' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'v' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'w' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'x' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'y' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | 'z' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '{' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '|' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '}' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '~' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x7f' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x80' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x81' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x82' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x83' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x84' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x85' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x86' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x87' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x88' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x89' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x8a' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x8b' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x8c' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x8d' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x8e' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x8f' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x90' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x91' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x92' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x93' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x94' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x95' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x96' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x97' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x98' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x99' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x9a' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x9b' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x9c' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x9d' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x9e' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\x9f' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xa0' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xa1' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xa2' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xa3' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xa4' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xa5' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xa6' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xa7' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xa8' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xa9' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xaa' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xab' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xac' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xad' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xae' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xaf' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xb0' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xb1' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xb2' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xb3' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xb4' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xb5' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xb6' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xb7' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xb8' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xb9' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xba' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xbb' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xbc' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xbd' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xbe' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xbf' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xc0' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xc1' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xc2' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xc3' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xc4' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xc5' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xc6' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xc7' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xc8' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xc9' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xca' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xcb' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xcc' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xcd' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xce' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xcf' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xd0' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xd1' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xd2' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xd3' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xd4' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xd5' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xd6' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xd7' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xd8' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xd9' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xda' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xdb' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xdc' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xdd' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xde' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xdf' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xe0' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xe1' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xe2' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xe3' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xe4' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xe5' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xe6' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xe7' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xe8' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xe9' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xea' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xeb' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xec' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xed' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xee' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xef' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xf0' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xf1' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xf2' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xf3' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xf4' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xf5' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xf6' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xf7' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xf8' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xf9' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xfa' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xfb' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xfc' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xfd' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xfe' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
+   | '\xff' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b)))
+
 (** val resend :
     Uint63.t -> Uint63.t -> Unix.file_descr -> bytes -> Uint63.t -> unit
     optionE **)
@@ -483,1087 +797,29 @@ let resend x x0 x1 x2 x3 =
               ((^) (string_of_bytes message) "'")))) __
   in hrec x x0 x1 x2 x3 __
 
+(** val max_message_len : Uint63.t **)
+
+let max_message_len =
+  (Uint63.of_int (4096))
+
 (** val send_message : Unix.file_descr -> bytes -> unit optionE **)
 
 let send_message sockfd message =
-  resend (Uint63.of_int (100)) (Uint63.of_int (0)) sockfd message
-    (int_len_list message)
+  if ltsb max_message_len (int_len_list message)
+  then NoneE "Messages cannot exceed 4kb"
+  else resend (Uint63.of_int (100)) (Uint63.of_int (0)) sockfd message
+         (int_len_list message)
 
 (** val recv_message : Unix.file_descr -> Uint63.t -> bytes optionE **)
 
 let recv_message sockfd len =
   let (_, out) = recv sockfd (Uint63.of_int (0)) len [] in SomeE out
 
-(** val recv_int : Unix.file_descr -> Uint63.t optionE **)
+(** val recv_server_message : Unix.file_descr -> server_message optionE **)
 
-let recv_int sockfd =
-  match recv_message sockfd (Uint63.of_int (8)) with
-  | SomeE n_bytes -> SomeE (Proofchat.Pfbytes.bytes_to_int63 n_bytes)
-  | NoneE err -> NoneE err
-
-(** val recv_ACK : Unix.file_descr -> (Uint63.t * username list) optionE **)
-
-let recv_ACK sockfd =
-  match recv_message sockfd (Uint63.of_int (1)) with
-  | SomeE code ->
-    (match match code with
-           | [] ->
-             NoneE
-               ((^) "Tried to receive ACK, got byte " (string_of_bytes code))
-           | b :: l ->
-             (match b with
-              | '\x00' ->
-                (match l with
-                 | [] -> SomeE ()
-                 | _ :: _ ->
-                   NoneE
-                     ((^) "Tried to receive ACK, got byte "
-                       (string_of_bytes code)))
-              | '\x01' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x02' ->
-                (match l with
-                 | [] ->
-                   (match recv_int sockfd with
-                    | SomeE error_code ->
-                      NoneE (string_of_error (error_of_int error_code))
-                    | NoneE err -> NoneE err)
-                 | _ :: _ ->
-                   NoneE
-                     ((^) "Tried to receive ACK, got byte "
-                       (string_of_bytes code)))
-              | '\x03' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x04' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x05' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x06' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x07' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x08' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\t' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\n' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x0b' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x0c' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\r' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x0e' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x0f' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x10' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x11' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x12' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x13' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x14' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x15' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x16' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x17' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x18' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x19' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x1a' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x1b' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x1c' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x1d' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x1e' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x1f' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | ' ' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '!' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '"' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '#' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '$' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '%' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '&' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\'' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '(' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | ')' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '*' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '+' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | ',' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '-' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '.' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '/' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '0' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '1' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '2' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '3' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '4' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '5' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '6' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '7' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '8' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '9' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | ':' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | ';' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '<' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '=' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '>' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '?' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '@' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'A' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'B' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'C' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'D' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'E' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'F' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'G' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'H' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'I' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'J' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'K' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'L' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'M' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'N' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'O' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'P' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'Q' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'R' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'S' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'T' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'U' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'V' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'W' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'X' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'Y' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'Z' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '[' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\\' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | ']' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '^' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '_' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '`' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'a' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'b' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'c' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'd' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'e' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'f' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'g' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'h' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'i' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'j' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'k' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'l' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'm' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'n' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'o' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'p' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'q' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'r' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 's' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 't' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'u' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'v' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'w' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'x' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'y' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | 'z' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '{' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '|' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '}' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '~' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x7f' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x80' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x81' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x82' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x83' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x84' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x85' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x86' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x87' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x88' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x89' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x8a' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x8b' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x8c' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x8d' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x8e' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x8f' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x90' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x91' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x92' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x93' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x94' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x95' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x96' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x97' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x98' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x99' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x9a' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x9b' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x9c' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x9d' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x9e' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\x9f' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xa0' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xa1' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xa2' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xa3' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xa4' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xa5' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xa6' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xa7' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xa8' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xa9' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xaa' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xab' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xac' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xad' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xae' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xaf' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xb0' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xb1' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xb2' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xb3' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xb4' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xb5' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xb6' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xb7' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xb8' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xb9' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xba' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xbb' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xbc' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xbd' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xbe' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xbf' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xc0' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xc1' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xc2' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xc3' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xc4' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xc5' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xc6' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xc7' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xc8' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xc9' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xca' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xcb' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xcc' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xcd' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xce' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xcf' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xd0' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xd1' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xd2' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xd3' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xd4' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xd5' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xd6' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xd7' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xd8' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xd9' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xda' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xdb' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xdc' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xdd' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xde' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xdf' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xe0' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xe1' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xe2' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xe3' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xe4' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xe5' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xe6' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xe7' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xe8' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xe9' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xea' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xeb' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xec' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xed' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xee' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xef' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xf0' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xf1' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xf2' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xf3' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xf4' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xf5' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xf6' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xf7' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xf8' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xf9' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xfa' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xfb' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xfc' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xfd' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xfe' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))
-              | '\xff' ->
-                NoneE
-                  ((^) "Tried to receive ACK, got byte "
-                    (string_of_bytes code))) with
-     | SomeE _ ->
-       (match recv_int sockfd with
-        | SomeE num_users ->
-          (match recv_message sockfd (mul num_users (Uint63.of_int (32))) with
-           | SomeE usernames_bytes ->
-             (match divide usernames_bytes (Uint63.of_int (32)) num_users with
-              | SomeE usernames_split ->
-                let option_usernames =
-                  map (fun b -> new_username (string_of_bytes b))
-                    usernames_split
-                in
-                (match strip_options option_usernames with
-                 | SomeE usernames -> SomeE (num_users, usernames)
-                 | NoneE err -> NoneE err)
-              | NoneE err -> NoneE err)
-           | NoneE err -> NoneE err)
-        | NoneE err -> NoneE err)
-     | NoneE err -> NoneE err)
+let recv_server_message sockfd =
+  match recv_message sockfd max_message_len with
+  | SomeE msg_bytes -> deserialize_server_message msg_bytes
   | NoneE err -> NoneE err
 
 (** val client : string -> int -> unit optionE **)
@@ -1580,7 +836,7 @@ let client host portno =
        portno)
      in
      let () =
-       print_endline
+       Proofchat.Logging._log Log_Debug
          ((^) "Opening client connection to "
            ((^) (string_of_socket_addr socket_addr)
              ((^) " as " (string_of_socket_addr (Unix.getsockname socket_fd)))))
@@ -1588,11 +844,25 @@ let client host portno =
      let () = Unix.connect socket_fd socket_addr in
      (match send_message socket_fd (serialize_client_message (REG uname)) with
       | SomeE _ ->
-        (match recv_ACK socket_fd with
-         | SomeE _ ->
-           let () = Unix.sleep (Uint63.of_int (1000)) in
-           let () = print_endline "Closing client connection" in
-           let () = Unix.close socket_fd in SomeE ()
+        (match recv_server_message socket_fd with
+         | SomeE server_ack ->
+           (match match server_ack with
+                  | ACK (num_users, _) -> SomeE num_users
+                  | MSG (_, _) -> NoneE "Server denied connection"
+                  | ERR s -> NoneE (string_of_error s) with
+            | SomeE num_users ->
+              let () = print_endline "what" in
+              let () =
+                Proofchat.Logging._log Log_Info "Server accepted connection"
+              in
+              let () =
+                Proofchat.Logging._log Log_Info
+                  ((^) (string_of_int num_users) " other users connected")
+              in
+              let () = Unix.sleep (Uint63.of_int (1000)) in
+              let () = print_endline "Closing connection to server" in
+              let () = Unix.close socket_fd in SomeE ()
+            | NoneE err -> NoneE err)
          | NoneE err -> NoneE err)
       | NoneE err -> NoneE err)
    | NoneE err -> NoneE err)

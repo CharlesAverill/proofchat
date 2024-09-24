@@ -55,6 +55,13 @@ Axiom int63_to_bytes : int -> bytes.
 Axiom bytes_to_int63 : bytes -> int.
 
 
+(** Logging *)
+Inductive log_type : Type :=
+| Log_None | Log_Debug | Log_Info
+| Log_Warning | Log_Error | Log_Critical.
+
+Axiom log : log_type -> string -> unit.
+
 (**
     A convenience lemma similar to [Z2Nat.inj_lt]
 *)

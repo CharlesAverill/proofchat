@@ -22,6 +22,6 @@ let bytes_to_int63 (b : char list) : int =
 
 let functional_read (fd : file_descr) (pos : int) (len : int) (flags : msg_flag list) 
     : int * char list =
-  let b = Bytes.create len in
+  let b = Bytes.make len '\000' in
   let num_read = recv fd b pos len flags in
   (num_read, char_list_of_bytes b)

@@ -102,6 +102,10 @@ val create_list : 'a1 -> Uint63.t -> 'a1 list
 
 val pad_string_r : string -> char -> Uint63.t -> string
 
+val trim_r : string -> char -> string
+
+val trim_null : bytes -> string
+
 val first_n : 'a1 list -> Uint63.t -> 'a1 list optionE
 
 val last_n : 'a1 list -> Uint63.t -> 'a1 list optionE
@@ -148,15 +152,24 @@ val serialize_server_message : server_message -> bytes
 val resend :
   Uint63.t -> Uint63.t -> Unix.file_descr -> bytes -> Uint63.t -> unit optionE
 
+val max_message_len : Uint63.t
+
 val send_message : Unix.file_descr -> bytes -> unit optionE
 
 val recv_message : Unix.file_descr -> Uint63.t -> bytes optionE
+
+val recv_client_message : Unix.file_descr -> client_message optionE
+
+val cc_uname : Proofchat.Serverstate.client_connection -> username
 
 val cc_descr : Proofchat.Serverstate.client_connection -> Unix.file_descr
 
 val cc_addr : Proofchat.Serverstate.client_connection -> Unix.sockaddr
 
-val recv_client_message :
+val server_client_communication :
+  Proofchat.Serverstate.client_connection -> unit optionE
+
+val recv_client_message0 :
   Proofchat.Serverstate.client_connection -> unit optionE
 
 val server_accept_thread : Unix.file_descr -> unit optionE

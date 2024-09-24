@@ -43,12 +43,14 @@ Extract Inlined Constant create => "Thread.create".
 Extract Inlined Constant join => "Thread.join".
 Extract Inlined Constant exit => "Thread.exit".
 Extract Constant keep => "(fun _ -> ())".
+Extract Inlined Constant log => "Proofchat.Logging._log".
 
 (** ** Server state *)
 Extract Inlined Constant init_connections => "Proofchat.Serverstate.init_connections".
 Extract Inlined Constant add_connection => "Proofchat.Serverstate.add_connection".
 Extract Inlined Constant remove_connection => "Proofchat.Serverstate.remove_connection".
 Extract Inlined Constant get_connection => "Proofchat.Serverstate.get_connection".
+Extract Inlined Constant get_connection_list => "Proofchat.Serverstate.get_connection_list".
 
 (** ** Types *)
 Extract Inlined Constant port => "int".
@@ -66,7 +68,10 @@ Extract Inlined Constant thread => "Thread.t".
 Extract Inductive client_connection =>
     "Proofchat.Serverstate.client_connection" 
     [ "" ].
-(* Extract Inlined Constant cc_uname => "(fun x -> x.cc_uname)". *)
+Extract Inductive log_type =>
+    "Proofchat.Logging.log_type"
+    [ "Log_None" "Log_Debug" "Log_Info" 
+      "Log_Warning" "Log_Error" "Log_Critical" ].
 
 (** ** Extraction *)
 Set Extraction Output Directory "proofchat/bin/client".

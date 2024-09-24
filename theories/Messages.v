@@ -95,9 +95,10 @@ Definition new_username (s : string) : optionE username.
       |}).
     - destruct (no_spaces s).
         -- (* No Spaces *) 
-        exact (NoneE "Username length must be in range [1..32]").
+        exact (NoneE 
+            ("Username length must be in range [1..32]: '" ++ s ++ "'")).
         -- (* Spaces *)
-        exact (NoneE "Username cannot contain spaces").
+        exact (NoneE ("Username cannot contain spaces: '" ++ s ++ "'")).
 Defined.
 
 Definition dummy_username : username.
@@ -178,16 +179,17 @@ Definition serialize_client_message (cm : client_message) : bytes :=
 Definition deserialize_client_message (b : bytes) : optionE client_message :=
     match b with
     | x00 :: t => 
-        uname <- new_username (string_of_bytes t) ;;
+        let* _ <= print_endline (string_of_int (int_len_list t)) #;
+        uname <- new_username (trim_null t) ;;
         return (REG uname)
-    | x01 :: t => return (MESG (string_of_bytes t))
+    | x01 :: t => return (MESG (trim_null t))
     | x02 :: t =>
         name_bytes <- first_n t 32 ;;
         uname <- new_username (string_of_bytes name_bytes) ;;
         msg_bytes <- last_n t (int_len_list t - 32) ;;
-        return (PMSG (string_of_bytes msg_bytes) uname)
+        return (PMSG (trim_null msg_bytes) uname)
     | x03 :: t => 
-        uname <- new_username (string_of_bytes t) ;;
+        uname <- new_username (trim_null t) ;;
         return (EXIT uname)
     | _ => NoneE ("Client message code not recognized: " ++ (string_of_bytes b))
     end.
@@ -304,7 +306,9 @@ Definition deserialize_server_message (b : bytes) : optionE server_message :=
     match b with
     (** This case isn't helpful... why should we deserialize 
         something when we don't even know how many bytes to pull?
-        Below, [recv_ACK] does basically the same thing *)
+        Below, [recv_ACK] does basically the same thing.
+        But also, we can just always receive some large number of
+        bytes and assume that we have enough space. *)
     | x00 :: t =>
         num_users_bytes <- first_n t 8 ;;
         users_bytes <- last_n t (int_len_list t - 8) ;;
@@ -314,7 +318,18 @@ Definition deserialize_server_message (b : bytes) : optionE server_message :=
             (fun b => new_username (string_of_bytes b)) usernames_bytes in
         usernames <- strip_options option_usernames ;;
         return (ACK num_users usernames)
-    | _ => fail "x"
+    | x01 :: t =>
+        username_bytes <- first_n t 32 ;;
+        uname <- new_username (string_of_bytes username_bytes) ;;
+        t <- last_n t (int_len_list t - 32) ;;
+        len_msg_bytes <- first_n t 8 ;;
+        let len_msg := bytes_to_int63 len_msg_bytes in
+        msg_bytes <- last_n t len_msg ;;
+        return (MSG uname (string_of_bytes msg_bytes))
+    | x02 :: t =>
+        err_bytes <- first_n t 8 ;;
+        return (ERR (error_of_int (bytes_to_int63 err_bytes)))
+    | _ => fail ("Failed to deserialize bytes: " ++ (string_of_bytes b))
     end.
 
 (** Sends a message to a socket, checking for the case where only some of the
@@ -340,15 +355,31 @@ Function resend
     prove_sub1.
 Defined.
 
+(** Maximum length of message sent between sockets  *)
+Definition max_message_len : int := 4096.
+
 (** Wrapper for [resend] *)
 Definition send_message (sockfd : file_descr) (message : bytes) : optionE unit :=
-    resend 100 0 sockfd message (int_len_list message).
+    if (max_message_len <? int_len_list message) then
+        fail "Messages cannot exceed 4kb"
+    else
+        resend 100 0 sockfd message (int_len_list message).
 
 (** Receives a message from a socket *)
 Definition recv_message (sockfd : file_descr) (len : int) : optionE bytes :=
     match recv sockfd 0 len [] with
     | (_, out) => SomeE out
     end.
+
+(** Receives a message from a socket and deserializes it as a client message *)
+Definition recv_client_message (sockfd : file_descr) : optionE client_message :=
+    msg_bytes <- recv_message sockfd max_message_len ;;
+    deserialize_client_message msg_bytes.
+
+(** Receives a message from a socket and deserializes it as a server message *)
+Definition recv_server_message (sockfd : file_descr) : optionE server_message :=
+    msg_bytes <- recv_message sockfd max_message_len ;;
+    deserialize_server_message msg_bytes.
 
 (** Receives an int from a socket *)
 Definition recv_int (sockfd : file_descr) : optionE int :=

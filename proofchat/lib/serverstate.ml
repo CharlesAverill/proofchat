@@ -35,3 +35,6 @@ let get_connection (s : string) : client_connection option =
       (function (cc_uname, _, _) -> cc_uname = s) !connections) with
     | h :: _ -> Some h
     | _ -> None)
+
+let get_connection_list () =
+  !connections

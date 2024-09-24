@@ -5,6 +5,7 @@
 
 Require Import Messages.
 Require Import Monads.
+Require Import OCamlTypes.
 Require Import Recdef.
 Open Scope monad_scope.
 
@@ -25,19 +26,26 @@ Definition client (host : string) (portno : port) : optionE unit :=
     (* Create a TCP socket to server *)
     let socket_fd := socket PF_INET SOCK_STREAM 0 in
     let socket_addr := ADDR_INET (inet_addr_of_string host) portno in
-    let* _ <= print_endline ("Opening client connection to " ++ 
+    let* _ <= log Log_Debug ("Opening client connection to " ++ 
         (string_of_socket_addr socket_addr) ++ " as " ++
         (string_of_socket_addr (getsockname socket_fd))) #;
     let* _ <= connect socket_fd socket_addr #;
     (* Send REG message to server *)
     _ <- send_message socket_fd (serialize_client_message (REG uname)) ;;
     (* Receive ACK from server *)
-    users_usernames <-
-        recv_ACK socket_fd ;;
+    server_ack <- recv_server_message socket_fd ;;
+    num_users <- (match server_ack with
+                  | ACK num_users _ => return num_users
+                  | ERR s => fail (string_of_error s)
+                  | _ => fail "Server denied connection"
+                  end) ;;
+    let* _ <= print_endline "what" #;
+    let* _ <= log Log_Info "Server accepted connection" #;
+    let* _ <= log Log_Info ((string_of_int num_users) ++ " other users connected") #;
     let* _ <= sleep 1000 #;
     (* Display chatroom information to user output *)
     (* Wait for user input *)
     (* Wait for chat messages from server *)
-    let* _ <= print_endline "Closing client connection" #;
+    let* _ <= print_endline "Closing connection to server" #;
     let* _ <= close socket_fd #;
     return tt.

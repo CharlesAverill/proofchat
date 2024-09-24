@@ -1,4 +1,4 @@
 (library
  (name proofchat)
- (modules pfbytes serverstate)
+ (modules pfbytes serverstate logging)
  (libraries threads))

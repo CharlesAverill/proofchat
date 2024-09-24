@@ -24,36 +24,50 @@ Axiom init_connections : unit -> unit.
 Axiom add_connection : client_connection -> unit.
 Axiom remove_connection : client_connection -> unit.
 Axiom get_connection : username -> option client_connection.
+Axiom get_connection_list : unit -> list client_connection.
 
+Definition server_client_communication (cc : client_connection) : optionE unit :=
+    repeat_until_timeout max_int (fun _ =>
+        match recv_client_message cc.(cc_descr) with
+        | SomeE (MESG msg) =>
+            let* _ <= print_endline (cc.(cc_uname).(Uname) ++ " said " ++ msg) #;
+            Recurse
+        | _ => EarlyStopFailure ("unrecognized message") 
+        end
+    ).
+
+(** Do initial processing of client connection, and then start communicating
+    with the client *)
 Definition recv_client_message (cc : client_connection) : optionE unit :=
-    let* _ <= print_endline "Accepted, can receive!" #;
+    let* _ <= log Log_Debug "Accepted new connection" #;
     (* Read 33 bytes - should be a REG message *)
-    reg_bytes <- recv_message cc.(cc_descr) 33 ;;
-    match (deserialize_client_message reg_bytes) with
+    match (recv_client_message cc.(cc_descr)) with
     | SomeE (REG uname) =>
         match get_connection uname with
         (* Username is not taken *)
         | None => 
             (* Add the new connection *)
-            let* _ <= print_endline (uname.(Uname) ++ " has joined") #;
+            let* _ <= log Log_Info (uname.(Uname) ++ " has joined") #;
             let cc := {|
                 cc_uname := uname; 
                 cc_descr := cc.(cc_descr); 
                 cc_addr := cc.(cc_addr)
             |} in
             let* _ <= add_connection cc #;
-            (* temporary *)
-            (* let* _ <= remove_connection cc #; *)
-            return tt
+            server_client_communication cc
         (* Username is taken *)
         | Some _ =>
-            let* _ <= print_endline (uname.(Uname) ++ 
+            let* _ <= log Log_Error (uname.(Uname) ++ 
                 " tried to join, but username already taken") #;
             _ <- send_message cc.(cc_descr)
                 (serialize_server_message (ERR UsernameTaken)) ;;
             return tt
         end
+    | NoneE s =>
+        let* _ <= log Log_Error s #;
+        return tt
     | _ => 
+        let* _ <= log Log_Error "Unexpected message format received" #;
         send_message cc.(cc_descr)
             (serialize_server_message (ERR UnknownMessageFormat))
     end.
@@ -64,7 +78,7 @@ Definition recv_client_message (cc : client_connection) : optionE unit :=
 Definition server_accept_thread (socket_fd : file_descr) : optionE unit :=
     repeat_until_timeout max_int (fun _ =>
         let '(client_descr, client_addr) := accept socket_fd in
-        let* _ <= print_endline 
+        let* _ <= log Log_Debug 
             ("Accepted client socket " ++ (string_of_socket_addr client_addr)) #;
         let* _ <= keep thread (create client_connection (optionE unit) recv_client_message
             {|cc_uname := dummy_username; cc_descr := client_descr; cc_addr := client_addr|}) #;
@@ -79,14 +93,14 @@ Definition server (host : string) (portno : port) : optionE unit :=
     (* Create a TCP socket *)
     let socket_fd := socket PF_INET SOCK_STREAM 0 in
     let socket_addr := ADDR_INET (inet_addr_of_string host) portno in
-    let* _ <= print_endline ("Binding socket " ++ 
+    let* _ <= log Log_Debug ("Binding socket " ++ 
         (string_of_socket_addr socket_addr) ++ " as " ++
         (string_of_socket_addr (getsockname socket_fd))) #;
     let* _ <= bind socket_fd socket_addr #;
     (* Wait for and accept any incoming TCP connection requests. *)
     let* _ <= listen socket_fd 10 #;
-    let* _ <= print_endline "Server started" #;
+    let* _ <= log Log_Info "Server started" #;
     _ <- server_accept_thread socket_fd ;;
-    let* _ <= print_endline "Closing server" #;
+    let* _ <= log Log_Info "Closing server" #;
     let* _ <= close socket_fd #;
     return tt.

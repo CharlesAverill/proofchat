@@ -212,7 +212,9 @@ let string_of_socket_addr = function
 
 let rec int_len_list = function
 | [] -> (Uint63.of_int (0))
-| _ :: t -> add (Uint63.of_int (1)) (int_len_list t)
+| _ :: t ->
+  let n0 = int_len_list t in
+  if ltsb n0 max_int then add (Uint63.of_int (1)) n0 else max_int
 
 (** val bytes_of_string : string -> bytes **)
 
@@ -255,6 +257,22 @@ let create_list x0 x1 =
 let pad_string_r s b target_len =
   (^) s (string_of_bytes (create_list b (sub target_len (int_len_string s))))
 
+(** val trim_r : string -> char -> string **)
+
+let trim_r s b =
+  let aux =
+    let rec aux = function
+    | [] -> []
+    | a :: s' -> if (=) a b then aux s' else a :: s'
+    in aux
+  in
+  string_of_bytes (rev (aux (rev (bytes_of_string s))))
+
+(** val trim_null : bytes -> string **)
+
+let trim_null b =
+  trim_r (string_of_bytes b) '\x00'
+
 (** val first_n : 'a1 list -> Uint63.t -> 'a1 list optionE **)
 
 let rec first_n l n0 =
@@ -295,8 +313,11 @@ let new_username s =
    else (fun _ ->
           let b0 = no_spaces s in
           if b0
-          then NoneE "Username length must be in range [1..32]"
-          else NoneE "Username cannot contain spaces")) __
+          then NoneE
+                 ((^) "Username length must be in range [1..32]: '"
+                   ((^) s "'"))
+          else NoneE ((^) "Username cannot contain spaces: '" ((^) s "'"))))
+    __
 
 (** val dummy_username : username **)
 
@@ -327,23 +348,23 @@ let deserialize_client_message b = match b with
 | b0 :: t ->
   (match b0 with
    | '\x00' ->
-     (match new_username (string_of_bytes t) with
+     let () = print_endline (string_of_int (int_len_list t)) in
+     (match new_username (trim_null t) with
       | SomeE uname -> SomeE (REG uname)
       | NoneE err -> NoneE err)
-   | '\x01' -> SomeE (MESG (string_of_bytes t))
+   | '\x01' -> SomeE (MESG (trim_null t))
    | '\x02' ->
      (match first_n t (Uint63.of_int (32)) with
       | SomeE name_bytes ->
         (match new_username (string_of_bytes name_bytes) with
          | SomeE uname ->
            (match last_n t (sub (int_len_list t) (Uint63.of_int (32))) with
-            | SomeE msg_bytes ->
-              SomeE (PMSG ((string_of_bytes msg_bytes), uname))
+            | SomeE msg_bytes -> SomeE (PMSG ((trim_null msg_bytes), uname))
             | NoneE err -> NoneE err)
          | NoneE err -> NoneE err)
       | NoneE err -> NoneE err)
    | '\x03' ->
-     (match new_username (string_of_bytes t) with
+     (match new_username (trim_null t) with
       | SomeE uname -> SomeE (EXIT uname)
       | NoneE err -> NoneE err)
    | '\x04' ->
@@ -907,16 +928,35 @@ let resend x x0 x1 x2 x3 =
               ((^) (string_of_bytes message) "'")))) __
   in hrec x x0 x1 x2 x3 __
 
+(** val max_message_len : Uint63.t **)
+
+let max_message_len =
+  (Uint63.of_int (4096))
+
 (** val send_message : Unix.file_descr -> bytes -> unit optionE **)
 
 let send_message sockfd message =
-  resend (Uint63.of_int (100)) (Uint63.of_int (0)) sockfd message
-    (int_len_list message)
+  if ltsb max_message_len (int_len_list message)
+  then NoneE "Messages cannot exceed 4kb"
+  else resend (Uint63.of_int (100)) (Uint63.of_int (0)) sockfd message
+         (int_len_list message)
 
 (** val recv_message : Unix.file_descr -> Uint63.t -> bytes optionE **)
 
 let recv_message sockfd len =
   let (_, out) = recv sockfd (Uint63.of_int (0)) len [] in SomeE out
+
+(** val recv_client_message : Unix.file_descr -> client_message optionE **)
+
+let recv_client_message sockfd =
+  match recv_message sockfd max_message_len with
+  | SomeE msg_bytes -> deserialize_client_message msg_bytes
+  | NoneE err -> NoneE err
+
+(** val cc_uname : Proofchat.Serverstate.client_connection -> username **)
+
+let cc_uname = function
+| (cc_uname0, _, _) -> cc_uname0
 
 (** val cc_descr :
     Proofchat.Serverstate.client_connection -> Unix.file_descr **)
@@ -929,44 +969,69 @@ let cc_descr = function
 let cc_addr = function
 | (_, _, cc_addr0) -> cc_addr0
 
-(** val recv_client_message :
+(** val server_client_communication :
     Proofchat.Serverstate.client_connection -> unit optionE **)
 
-let recv_client_message cc =
-  let () = print_endline "Accepted, can receive!" in
-  (match recv_message (cc_descr cc) (Uint63.of_int (33)) with
-   | SomeE reg_bytes ->
-     (match deserialize_client_message reg_bytes with
-      | SomeE x ->
-        (match x with
-         | REG uname ->
-           (match Proofchat.Serverstate.get_connection uname with
-            | Some _ ->
-              let () =
-                print_endline
-                  ((^) uname " tried to join, but username already taken")
-              in
-              (match send_message (cc_descr cc)
-                       (serialize_server_message (ERR UsernameTaken)) with
-               | SomeE _ -> SomeE ()
-               | NoneE err -> NoneE err)
-            | None ->
-              let () = print_endline ((^) uname " has joined") in
-              let cc0 = (uname, (cc_descr cc), (cc_addr cc)) in
-              let () = Proofchat.Serverstate.add_connection cc0 in SomeE ())
-         | MESG _ ->
-           send_message (cc_descr cc)
-             (serialize_server_message (ERR UnknownMessageFormat))
-         | PMSG (_, _) ->
-           send_message (cc_descr cc)
-             (serialize_server_message (ERR UnknownMessageFormat))
-         | EXIT _ ->
-           send_message (cc_descr cc)
-             (serialize_server_message (ERR UnknownMessageFormat)))
-      | NoneE _ ->
+let server_client_communication cc =
+  repeat_until_timeout max_int (fun _ ->
+    match recv_client_message (cc_descr cc) with
+    | SomeE x ->
+      (match x with
+       | REG _ -> EarlyStopFailure "unrecognized message"
+       | MESG msg ->
+         let () = print_endline ((^) (cc_uname cc) ((^) " said " msg)) in
+         Recurse
+       | PMSG (_, _) -> EarlyStopFailure "unrecognized message"
+       | EXIT _ -> EarlyStopFailure "unrecognized message")
+    | NoneE _ -> EarlyStopFailure "unrecognized message")
+
+(** val recv_client_message0 :
+    Proofchat.Serverstate.client_connection -> unit optionE **)
+
+let recv_client_message0 cc =
+  let () = Proofchat.Logging._log Log_Debug "Accepted new connection" in
+  (match recv_client_message (cc_descr cc) with
+   | SomeE x ->
+     (match x with
+      | REG uname ->
+        (match Proofchat.Serverstate.get_connection uname with
+         | Some _ ->
+           let () =
+             Proofchat.Logging._log Log_Error
+               ((^) uname " tried to join, but username already taken")
+           in
+           (match send_message (cc_descr cc)
+                    (serialize_server_message (ERR UsernameTaken)) with
+            | SomeE _ -> SomeE ()
+            | NoneE err -> NoneE err)
+         | None ->
+           let () = Proofchat.Logging._log Log_Info ((^) uname " has joined")
+           in
+           let cc0 = (uname, (cc_descr cc), (cc_addr cc)) in
+           let () = Proofchat.Serverstate.add_connection cc0 in
+           server_client_communication cc0)
+      | MESG _ ->
+        let () =
+          Proofchat.Logging._log Log_Error
+            "Unexpected message format received"
+        in
+        send_message (cc_descr cc)
+          (serialize_server_message (ERR UnknownMessageFormat))
+      | PMSG (_, _) ->
+        let () =
+          Proofchat.Logging._log Log_Error
+            "Unexpected message format received"
+        in
+        send_message (cc_descr cc)
+          (serialize_server_message (ERR UnknownMessageFormat))
+      | EXIT _ ->
+        let () =
+          Proofchat.Logging._log Log_Error
+            "Unexpected message format received"
+        in
         send_message (cc_descr cc)
           (serialize_server_message (ERR UnknownMessageFormat)))
-   | NoneE err -> NoneE err)
+   | NoneE s -> let () = Proofchat.Logging._log Log_Error s in SomeE ())
 
 (** val server_accept_thread : Unix.file_descr -> unit optionE **)
 
@@ -974,12 +1039,12 @@ let server_accept_thread socket_fd =
   repeat_until_timeout max_int (fun _ ->
     let (client_descr, client_addr) = Unix.accept socket_fd in
     let () =
-      print_endline
+      Proofchat.Logging._log Log_Debug
         ((^) "Accepted client socket " (string_of_socket_addr client_addr))
     in
     let () =
       keep
-        (Thread.create recv_client_message (dummy_username, client_descr,
+        (Thread.create recv_client_message0 (dummy_username, client_descr,
           client_addr))
     in
     Recurse)
@@ -994,16 +1059,16 @@ let server host portno =
   let socket_addr = Unix.ADDR_INET ((Unix.inet_addr_of_string host), portno)
   in
   let () =
-    print_endline
+    Proofchat.Logging._log Log_Debug
       ((^) "Binding socket "
         ((^) (string_of_socket_addr socket_addr)
           ((^) " as " (string_of_socket_addr (Unix.getsockname socket_fd)))))
   in
   let () = Unix.bind socket_fd socket_addr in
   let () = Unix.listen socket_fd (Uint63.of_int (10)) in
-  let () = print_endline "Server started" in
+  let () = Proofchat.Logging._log Log_Info "Server started" in
   (match server_accept_thread socket_fd with
    | SomeE _ ->
-     let () = print_endline "Closing server" in
+     let () = Proofchat.Logging._log Log_Info "Closing server" in
      let () = Unix.close socket_fd in SomeE ()
    | NoneE err -> NoneE err)

@@ -63,22 +63,32 @@ Definition string_of_socket_addr (s : sockaddr) : string :=
 Fixpoint int_len_list {X : Type} (l : list X) : int :=
     match l with
     | [] => 0
-    | _ :: t => 1 + int_len_list t
+    | _ :: t => 
+        let n := int_len_list t in
+        if (n <? max_int)%sint63 then
+            1 + n
+        else
+            max_int
     end.
 
 Theorem int_len_list_nat : forall (X : Type) (l : list X),
-    Z.of_nat (List.length l) < to_Z max_int ->
     (0 <=? int_len_list l = true)%sint63.
 Proof.
     intros. induction l.
     - reflexivity.
-    - simpl. apply leb_spec. simpl in H.
-        rewrite Zpos_P_of_succ_nat in H.
-        apply Z.lt_succ_l in H.
-        specialize (IHl H).
-      apply leb_spec in IHl.
-      etransitivity. eassumption.
-Abort.
+    - simpl.
+      destruct (int_len_list l <? max_int)%sint63 eqn:E.
+      apply leb_spec. apply leb_spec in IHl. apply ltb_spec in E.
+      rewrite to_Z_add.
+        etransitivity. eassumption.
+        change (to_Z 1) with 1. lia.
+      split.
+        transitivity 0. unfold to_Z, Uint63.to_Z; simpl; lia.
+        etransitivity. eassumption. 
+            change (to_Z 1) with 1. lia.
+        rewrite Z.add_comm. now apply Ztac.Zlt_le_add_1.
+        apply leb_spec. unfold to_Z, Uint63.to_Z; simpl; lia.
+Qed.
 
 (** Get a list of [byte]s from a [string] *)
 Fixpoint bytes_of_string (s : string) : bytes :=
@@ -116,8 +126,19 @@ Function create_list {X : Type} (x : X) (n : int)
     prove_sub1.
 Defined.
 
+Definition max (x y : int) : int :=
+    if (y <? x)%sint63 then x else y.
+
 Theorem create_list_n : forall (X : Type) (x : X) (n : int),
-    int_len_list (create_list X x n) = n.
+    int_len_list (create_list X x n) = max 0 n.
+Proof.
+    intros. unfold create_list.
+    destruct (create_list_terminate).
+    destruct e. specialize (H (S x1)).
+    assert (x1 < S x1)%nat by lia.
+    specialize (H H0). clear H0.
+    rewrite <- H with (def := create_list). simpl.
+    unfold create_list_F. destruct (sub1_no_underflow n) eqn:E.
 Abort.
 
 (** Pad a string on the right with [b] until the entire string has length [target_len] *)
@@ -145,6 +166,9 @@ Definition trim_r (s : string) (b : byte) : string :=
                 a :: s'
         end in
     string_of_bytes (rev (aux (rev (bytes_of_string s)))).
+
+Definition trim_null (b : bytes) : string :=
+    trim_r (string_of_bytes b) "000"%byte.
 
 (** Get the first [n] elements of [l], or fail if not enough *)
 Fixpoint first_n {X : Type} (l : list X) (n : int) : optionE (list X) :=

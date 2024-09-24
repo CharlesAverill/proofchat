@@ -81,6 +81,7 @@
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">join</span> ⇒ "Thread.join".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">exit</span> ⇒ "Thread.exit".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Constant</span> <span class="id" title="var">keep</span> ⇒ "(fun _ -&gt; ())".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">log</span> ⇒ "Proofchat.Logging._log".<br/>
 
 <br/>
 </div>
@@ -94,6 +95,7 @@
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">add_connection</span> ⇒ "Proofchat.Serverstate.add_connection".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">remove_connection</span> ⇒ "Proofchat.Serverstate.remove_connection".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">get_connection</span> ⇒ "Proofchat.Serverstate.get_connection".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">get_connection_list</span> ⇒ "Proofchat.Serverstate.get_connection_list".<br/>
 
 <br/>
 </div>
@@ -118,6 +120,10 @@
 <span class="id" title="keyword">Extract</span> <span class="id" title="keyword">Inductive</span> <a class="idref" href="Proofchat.theories.Server.html#client_connection"><span class="id" title="record">client_connection</span></a> ⇒<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;"Proofchat.Serverstate.client_connection" <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;[ "" ].<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="keyword">Inductive</span> <a class="idref" href="Proofchat.theories.OCamlTypes.html#log_type"><span class="id" title="inductive">log_type</span></a> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;"Proofchat.Logging.log_type"<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;[ "Log_None" "Log_Debug" "Log_Info" <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"Log_Warning" "Log_Error" "Log_Critical" ].<br/>
 
 <br/>
 </div>

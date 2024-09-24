@@ -74,8 +74,6 @@ val add : Uint63.t -> Uint63.t -> Uint63.t
 
 val sub : Uint63.t -> Uint63.t -> Uint63.t
 
-val mul : Uint63.t -> Uint63.t -> Uint63.t
-
 val eqb : Uint63.t -> Uint63.t -> bool
 
 val ltb : Uint63.t -> Uint63.t -> bool
@@ -97,6 +95,8 @@ val to_Z_rec : nat -> Uint63.t -> z
 val to_Z : Uint63.t -> z
 
 val min_int : Uint63.t
+
+val max_int : Uint63.t
 
 val to_Z0 : Uint63.t -> z
 
@@ -168,15 +168,22 @@ val string_of_error : error -> string
 
 val error_of_int : Uint63.t -> error
 
+type server_message =
+| ACK of Uint63.t * username list
+| MSG of username * string
+| ERR of error
+
+val deserialize_server_message : bytes -> server_message optionE
+
 val resend :
   Uint63.t -> Uint63.t -> Unix.file_descr -> bytes -> Uint63.t -> unit optionE
+
+val max_message_len : Uint63.t
 
 val send_message : Unix.file_descr -> bytes -> unit optionE
 
 val recv_message : Unix.file_descr -> Uint63.t -> bytes optionE
 
-val recv_int : Unix.file_descr -> Uint63.t optionE
-
-val recv_ACK : Unix.file_descr -> (Uint63.t * username list) optionE
+val recv_server_message : Unix.file_descr -> server_message optionE
 
 val client : string -> int -> unit optionE
