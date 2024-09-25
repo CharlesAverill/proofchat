@@ -18,10 +18,10 @@ Unset Extraction Optimize.
 
 (** ** Functions *)
 Extract Inlined Constant read_line => "read_line".
-Extract Inlined Constant print_int => "print_int".
-Extract Inlined Constant print_string => "print_string".
+Extract Inlined Constant print_int => "(fun i -> print_int i; flush stdout)".
+Extract Inlined Constant print_string => "(fun s -> print_string s; flush stdout)".
 Extract Constant print_bytes => "(fun b -> print_bytes (Proofchat.Pfbytes.bytes_of_char_list b))".
-Extract Inlined Constant print_endline => "print_endline".
+Extract Inlined Constant print_endline => "(fun s -> print_endline s; flush stdout)".
 Extract Inlined Constant string_of_int => "string_of_int".
 Extract Inlined Constant socket => "Unix.socket".
 Extract Inlined Constant sleep => "Unix.sleep".
@@ -39,11 +39,12 @@ Extract Constant recv => "Proofchat.Pfbytes.functional_read".
 Extract Inlined Constant close => "Unix.close".
 Extract Inlined Constant int63_to_bytes => "Proofchat.Pfbytes.int63_to_bytes".
 Extract Inlined Constant bytes_to_int63 => "Proofchat.Pfbytes.bytes_to_int63".
-Extract Inlined Constant create => "Thread.create".
+Extract Inlined Constant create => "(fun a b -> SomeE (Thread.create a b))".
 Extract Inlined Constant join => "Thread.join".
 Extract Inlined Constant exit => "Thread.exit".
 Extract Constant keep => "(fun _ -> ())".
 Extract Inlined Constant log => "Proofchat.Logging._log".
+Extract Inlined Constant newline => "Proofchat.Logging.newline".
 
 (** ** Server state *)
 Extract Inlined Constant init_connections => "Proofchat.Serverstate.init_connections".

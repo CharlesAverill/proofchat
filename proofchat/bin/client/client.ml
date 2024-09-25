@@ -60,6 +60,44 @@ module N =
   | S n' -> Npos (Pos.of_succ_nat n')
  end
 
+(** val zero : char **)
+
+let zero = '\000'
+
+(** val one : char **)
+
+let one = '\001'
+
+(** val shift : bool -> char -> char **)
+
+let shift = fun b c -> Char.chr (((Char.code c) lsl 1) land 255 + if b then 1 else 0)
+
+(** val ascii_of_pos : positive -> char **)
+
+let ascii_of_pos =
+  let rec loop n0 p =
+    match n0 with
+    | O -> zero
+    | S n' ->
+      (match p with
+       | XI p' -> shift true (loop n' p')
+       | XO p' -> shift false (loop n' p')
+       | XH -> one)
+  in loop (S (S (S (S (S (S (S (S O))))))))
+
+(** val ascii_of_N : n -> char **)
+
+let ascii_of_N = function
+| N0 -> zero
+| Npos p -> ascii_of_pos p
+
+(** val ascii_of_nat : nat -> char **)
+
+let ascii_of_nat a =
+  ascii_of_N (N.of_nat a)
+
+
+
 (** val rev : 'a1 list -> 'a1 list **)
 
 let rev l =
@@ -100,60 +138,6 @@ module Z =
   | Zneg x0 -> Zpos x0
  end
 
-(** val zero : char **)
-
-let zero = '\000'
-
-(** val one : char **)
-
-let one = '\001'
-
-(** val shift : bool -> char -> char **)
-
-let shift = fun b c -> Char.chr (((Char.code c) lsl 1) land 255 + if b then 1 else 0)
-
-(** val ascii_of_pos : positive -> char **)
-
-let ascii_of_pos =
-  let rec loop n0 p =
-    match n0 with
-    | O -> zero
-    | S n' ->
-      (match p with
-       | XI p' -> shift true (loop n' p')
-       | XO p' -> shift false (loop n' p')
-       | XH -> one)
-  in loop (S (S (S (S (S (S (S (S O))))))))
-
-(** val ascii_of_N : n -> char **)
-
-let ascii_of_N = function
-| N0 -> zero
-| Npos p -> ascii_of_pos p
-
-(** val ascii_of_nat : nat -> char **)
-
-let ascii_of_nat a =
-  ascii_of_N (N.of_nat a)
-
-
-
-type 'x optionE =
-| SomeE of 'x
-| NoneE of string
-
-(** val strip_options : 'a1 optionE list -> 'a1 list optionE **)
-
-let rec strip_options = function
-| [] -> SomeE []
-| o :: t ->
-  (match o with
-   | SomeE a ->
-     (match strip_options t with
-      | SomeE t' -> SomeE (a :: t')
-      | NoneE err -> NoneE err)
-   | NoneE s -> NoneE ((^) "strip_options fail: " s))
-
 (** val lsr0 : Uint63.t -> Uint63.t -> Uint63.t **)
 
 let lsr0 = Uint63.l_sr
@@ -169,6 +153,10 @@ let add = Uint63.add
 (** val sub : Uint63.t -> Uint63.t -> Uint63.t **)
 
 let sub = Uint63.sub
+
+(** val mul : Uint63.t -> Uint63.t -> Uint63.t **)
+
+let mul = Uint63.mul
 
 (** val eqb : Uint63.t -> Uint63.t -> bool **)
 
@@ -238,6 +226,22 @@ let max_int =
 let to_Z0 i =
   if ltb i min_int then to_Z i else Z.opp (to_Z (opp0 i))
 
+type 'x optionE =
+| SomeE of 'x
+| NoneE of string
+
+(** val strip_options : 'a1 optionE list -> 'a1 list optionE **)
+
+let rec strip_options = function
+| [] -> SomeE []
+| o :: t ->
+  (match o with
+   | SomeE a ->
+     (match strip_options t with
+      | SomeE t' -> SomeE (a :: t')
+      | NoneE err -> NoneE err)
+   | NoneE s -> NoneE ((^) "strip_options fail: " s))
+
 type bytes = char list
 
 (** val send :
@@ -257,6 +261,30 @@ let recv = Proofchat.Pfbytes.functional_read
 let sub1_no_underflow n0 =
   (&&) (lesb (Uint63.of_int (0)) (sub n0 (Uint63.of_int (1))))
     (ltsb (sub n0 (Uint63.of_int (1))) n0)
+
+type repeat_until_timeout_code =
+| Recurse
+| EarlyStopSuccess
+| EarlyStopFailure of string
+
+(** val repeat_until_timeout :
+    Uint63.t -> (unit -> repeat_until_timeout_code optionE) -> unit optionE **)
+
+let repeat_until_timeout x x0 =
+  let rec hrec timeout f _ =
+    (if sub1_no_underflow timeout
+     then (fun _ ->
+            (match f () with
+             | SomeE x1 ->
+               (fun _ ->
+                 (match x1 with
+                  | Recurse ->
+                    (fun _ _ -> hrec (sub timeout (Uint63.of_int (1))) f __)
+                  | EarlyStopSuccess -> (fun _ _ -> SomeE ())
+                  | EarlyStopFailure s -> (fun _ _ -> NoneE s)) __ __)
+             | NoneE s -> (fun _ -> NoneE s)) __)
+     else (fun _ -> NoneE "Timeout occurred")) __
+  in hrec x x0 __
 
 (** val space : char **)
 
@@ -471,309 +499,6 @@ type server_message =
 | MSG of username * string
 | ERR of error
 
-(** val deserialize_server_message : bytes -> server_message optionE **)
-
-let deserialize_server_message b = match b with
-| [] -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-| b0 :: t ->
-  (match b0 with
-   | '\x00' ->
-     (match first_n t (Uint63.of_int (8)) with
-      | SomeE num_users_bytes ->
-        (match last_n t (sub (int_len_list t) (Uint63.of_int (8))) with
-         | SomeE _ ->
-           let num_users = Proofchat.Pfbytes.bytes_to_int63 num_users_bytes in
-           (match divide t (Uint63.of_int (32)) num_users with
-            | SomeE usernames_bytes ->
-              let option_usernames =
-                map (fun b1 -> new_username (string_of_bytes b1))
-                  usernames_bytes
-              in
-              (match strip_options option_usernames with
-               | SomeE usernames -> SomeE (ACK (num_users, usernames))
-               | NoneE err -> NoneE err)
-            | NoneE err -> NoneE err)
-         | NoneE err -> NoneE err)
-      | NoneE err -> NoneE err)
-   | '\x01' ->
-     (match first_n t (Uint63.of_int (32)) with
-      | SomeE username_bytes ->
-        (match new_username (string_of_bytes username_bytes) with
-         | SomeE uname ->
-           (match last_n t (sub (int_len_list t) (Uint63.of_int (32))) with
-            | SomeE t0 ->
-              (match first_n t0 (Uint63.of_int (8)) with
-               | SomeE len_msg_bytes ->
-                 let len_msg = Proofchat.Pfbytes.bytes_to_int63 len_msg_bytes
-                 in
-                 (match last_n t0 len_msg with
-                  | SomeE msg_bytes ->
-                    SomeE (MSG (uname, (string_of_bytes msg_bytes)))
-                  | NoneE err -> NoneE err)
-               | NoneE err -> NoneE err)
-            | NoneE err -> NoneE err)
-         | NoneE err -> NoneE err)
-      | NoneE err -> NoneE err)
-   | '\x02' ->
-     (match first_n t (Uint63.of_int (8)) with
-      | SomeE err_bytes ->
-        SomeE (ERR
-          (error_of_int (Proofchat.Pfbytes.bytes_to_int63 err_bytes)))
-      | NoneE err -> NoneE err)
-   | '\x03' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x04' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x05' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x06' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x07' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x08' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\t' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\n' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x0b' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x0c' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\r' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x0e' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x0f' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x10' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x11' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x12' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x13' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x14' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x15' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x16' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x17' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x18' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x19' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x1a' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x1b' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x1c' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x1d' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x1e' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x1f' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | ' ' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '!' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '"' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '#' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '$' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '%' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '&' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\'' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '(' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | ')' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '*' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '+' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | ',' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '-' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '.' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '/' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '0' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '1' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '2' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '3' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '4' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '5' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '6' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '7' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '8' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '9' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | ':' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | ';' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '<' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '=' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '>' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '?' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '@' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'A' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'B' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'C' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'D' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'E' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'F' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'G' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'H' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'I' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'J' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'K' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'L' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'M' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'N' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'O' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'P' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'Q' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'R' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'S' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'T' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'U' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'V' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'W' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'X' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'Y' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'Z' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '[' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\\' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | ']' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '^' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '_' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '`' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'a' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'b' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'c' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'd' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'e' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'f' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'g' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'h' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'i' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'j' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'k' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'l' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'm' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'n' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'o' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'p' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'q' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'r' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 's' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 't' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'u' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'v' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'w' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'x' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'y' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | 'z' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '{' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '|' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '}' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '~' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x7f' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x80' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x81' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x82' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x83' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x84' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x85' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x86' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x87' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x88' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x89' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x8a' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x8b' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x8c' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x8d' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x8e' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x8f' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x90' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x91' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x92' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x93' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x94' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x95' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x96' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x97' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x98' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x99' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x9a' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x9b' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x9c' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x9d' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x9e' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\x9f' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xa0' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xa1' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xa2' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xa3' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xa4' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xa5' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xa6' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xa7' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xa8' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xa9' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xaa' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xab' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xac' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xad' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xae' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xaf' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xb0' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xb1' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xb2' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xb3' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xb4' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xb5' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xb6' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xb7' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xb8' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xb9' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xba' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xbb' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xbc' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xbd' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xbe' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xbf' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xc0' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xc1' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xc2' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xc3' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xc4' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xc5' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xc6' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xc7' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xc8' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xc9' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xca' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xcb' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xcc' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xcd' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xce' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xcf' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xd0' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xd1' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xd2' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xd3' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xd4' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xd5' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xd6' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xd7' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xd8' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xd9' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xda' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xdb' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xdc' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xdd' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xde' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xdf' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xe0' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xe1' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xe2' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xe3' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xe4' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xe5' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xe6' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xe7' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xe8' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xe9' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xea' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xeb' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xec' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xed' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xee' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xef' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xf0' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xf1' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xf2' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xf3' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xf4' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xf5' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xf6' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xf7' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xf8' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xf9' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xfa' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xfb' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xfc' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xfd' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xfe' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b))
-   | '\xff' -> NoneE ((^) "Failed to deserialize bytes: " (string_of_bytes b)))
-
 (** val resend :
     Uint63.t -> Uint63.t -> Unix.file_descr -> bytes -> Uint63.t -> unit
     optionE **)
@@ -797,35 +522,1164 @@ let resend x x0 x1 x2 x3 =
               ((^) (string_of_bytes message) "'")))) __
   in hrec x x0 x1 x2 x3 __
 
-(** val max_message_len : Uint63.t **)
-
-let max_message_len =
-  (Uint63.of_int (4096))
-
 (** val send_message : Unix.file_descr -> bytes -> unit optionE **)
 
 let send_message sockfd message =
-  if ltsb max_message_len (int_len_list message)
-  then NoneE "Messages cannot exceed 4kb"
-  else resend (Uint63.of_int (100)) (Uint63.of_int (0)) sockfd message
-         (int_len_list message)
+  resend (Uint63.of_int (100)) (Uint63.of_int (0)) sockfd message
+    (int_len_list message)
 
 (** val recv_message : Unix.file_descr -> Uint63.t -> bytes optionE **)
 
 let recv_message sockfd len =
   let (_, out) = recv sockfd (Uint63.of_int (0)) len [] in SomeE out
 
+(** val recv_int : Unix.file_descr -> Uint63.t optionE **)
+
+let recv_int sockfd =
+  match recv_message sockfd (Uint63.of_int (8)) with
+  | SomeE n_bytes -> SomeE (Proofchat.Pfbytes.bytes_to_int63 n_bytes)
+  | NoneE err -> NoneE err
+
+(** val recv_string : Unix.file_descr -> string optionE **)
+
+let recv_string sockfd =
+  match recv_int sockfd with
+  | SomeE str_len ->
+    (match recv_message sockfd str_len with
+     | SomeE str_bytes -> SomeE (string_of_bytes str_bytes)
+     | NoneE err -> NoneE err)
+  | NoneE err -> NoneE err
+
+(** val recv_username : Unix.file_descr -> username optionE **)
+
+let recv_username sockfd =
+  match recv_message sockfd (Uint63.of_int (32)) with
+  | SomeE username_bytes ->
+    (match new_username (string_of_bytes username_bytes) with
+     | SomeE uname -> SomeE uname
+     | NoneE err -> NoneE err)
+  | NoneE err -> NoneE err
+
+(** val recv_server_ACK : Unix.file_descr -> server_message optionE **)
+
+let recv_server_ACK sockfd =
+  match recv_int sockfd with
+  | SomeE num_users ->
+    (match recv_message sockfd (mul num_users (Uint63.of_int (32))) with
+     | SomeE usernames_bytes ->
+       (match divide usernames_bytes (Uint63.of_int (32)) num_users with
+        | SomeE usernames_split ->
+          let option_usernames =
+            map (fun b -> new_username (string_of_bytes b)) usernames_split
+          in
+          (match strip_options option_usernames with
+           | SomeE usernames -> SomeE (ACK (num_users, usernames))
+           | NoneE err -> NoneE err)
+        | NoneE err -> NoneE err)
+     | NoneE err -> NoneE err)
+  | NoneE err -> NoneE err
+
+(** val recv_server_MSG : Unix.file_descr -> server_message optionE **)
+
+let recv_server_MSG sockfd =
+  match recv_username sockfd with
+  | SomeE username0 ->
+    (match recv_string sockfd with
+     | SomeE msg -> SomeE (MSG (username0, msg))
+     | NoneE err -> NoneE err)
+  | NoneE err -> NoneE err
+
+(** val recv_server_ERR : Unix.file_descr -> server_message optionE **)
+
+let recv_server_ERR sockfd =
+  match recv_int sockfd with
+  | SomeE err_code -> SomeE (ERR (error_of_int err_code))
+  | NoneE err -> NoneE err
+
 (** val recv_server_message : Unix.file_descr -> server_message optionE **)
 
 let recv_server_message sockfd =
-  match recv_message sockfd max_message_len with
-  | SomeE msg_bytes -> deserialize_server_message msg_bytes
+  match recv_message sockfd (Uint63.of_int (1)) with
+  | SomeE code ->
+    (match code with
+     | [] ->
+       NoneE
+         ((^) "Failed to receieve server message with opcode "
+           (string_of_bytes code))
+     | b :: l ->
+       (match b with
+        | '\x00' ->
+          (match l with
+           | [] -> recv_server_ACK sockfd
+           | _ :: _ ->
+             NoneE
+               ((^) "Failed to receieve server message with opcode "
+                 (string_of_bytes code)))
+        | '\x01' ->
+          (match l with
+           | [] -> recv_server_MSG sockfd
+           | _ :: _ ->
+             NoneE
+               ((^) "Failed to receieve server message with opcode "
+                 (string_of_bytes code)))
+        | '\x02' ->
+          (match l with
+           | [] -> recv_server_ERR sockfd
+           | _ :: _ ->
+             NoneE
+               ((^) "Failed to receieve server message with opcode "
+                 (string_of_bytes code)))
+        | '\x03' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x04' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x05' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x06' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x07' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x08' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\t' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\n' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x0b' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x0c' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\r' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x0e' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x0f' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x10' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x11' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x12' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x13' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x14' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x15' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x16' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x17' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x18' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x19' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x1a' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x1b' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x1c' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x1d' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x1e' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x1f' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | ' ' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '!' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '"' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '#' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '$' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '%' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '&' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\'' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '(' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | ')' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '*' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '+' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | ',' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '-' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '.' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '/' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '0' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '1' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '2' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '3' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '4' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '5' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '6' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '7' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '8' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '9' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | ':' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | ';' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '<' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '=' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '>' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '?' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '@' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'A' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'B' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'C' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'D' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'E' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'F' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'G' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'H' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'I' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'J' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'K' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'L' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'M' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'N' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'O' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'P' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'Q' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'R' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'S' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'T' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'U' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'V' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'W' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'X' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'Y' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'Z' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '[' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\\' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | ']' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '^' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '_' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '`' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'a' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'b' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'c' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'd' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'e' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'f' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'g' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'h' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'i' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'j' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'k' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'l' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'm' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'n' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'o' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'p' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'q' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'r' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 's' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 't' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'u' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'v' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'w' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'x' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'y' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | 'z' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '{' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '|' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '}' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '~' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x7f' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x80' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x81' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x82' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x83' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x84' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x85' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x86' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x87' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x88' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x89' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x8a' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x8b' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x8c' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x8d' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x8e' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x8f' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x90' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x91' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x92' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x93' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x94' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x95' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x96' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x97' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x98' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x99' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x9a' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x9b' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x9c' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x9d' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x9e' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\x9f' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xa0' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xa1' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xa2' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xa3' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xa4' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xa5' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xa6' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xa7' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xa8' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xa9' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xaa' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xab' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xac' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xad' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xae' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xaf' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xb0' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xb1' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xb2' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xb3' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xb4' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xb5' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xb6' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xb7' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xb8' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xb9' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xba' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xbb' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xbc' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xbd' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xbe' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xbf' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xc0' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xc1' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xc2' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xc3' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xc4' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xc5' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xc6' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xc7' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xc8' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xc9' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xca' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xcb' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xcc' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xcd' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xce' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xcf' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xd0' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xd1' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xd2' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xd3' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xd4' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xd5' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xd6' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xd7' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xd8' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xd9' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xda' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xdb' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xdc' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xdd' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xde' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xdf' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xe0' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xe1' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xe2' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xe3' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xe4' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xe5' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xe6' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xe7' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xe8' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xe9' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xea' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xeb' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xec' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xed' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xee' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xef' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xf0' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xf1' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xf2' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xf3' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xf4' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xf5' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xf6' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xf7' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xf8' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xf9' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xfa' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xfb' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xfc' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xfd' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xfe' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))
+        | '\xff' ->
+          NoneE
+            ((^) "Failed to receieve server message with opcode "
+              (string_of_bytes code))))
   | NoneE err -> NoneE err
+
+(** val client_send_thread : Unix.file_descr -> unit optionE **)
+
+let client_send_thread sockfd =
+  repeat_until_timeout max_int (fun _ ->
+    let () = (fun s -> print_string s; flush stdout) ">>> " in
+    let msg = read_line () in
+    (match send_message sockfd (serialize_client_message (MESG msg)) with
+     | SomeE _ -> SomeE Recurse
+     | NoneE err -> NoneE err))
+
+(** val client_recv_thread : Unix.file_descr -> unit optionE **)
+
+let client_recv_thread sockfd =
+  repeat_until_timeout max_int (fun _ ->
+    match recv_server_message sockfd with
+    | SomeE server_msg ->
+      let () =
+        match server_msg with
+        | ACK (_, _) -> ()
+        | MSG (uname, msg) ->
+          let () =
+            (fun s -> print_endline s; flush stdout)
+              ((^) uname ((^) ": " msg))
+          in
+          (fun s -> print_string s; flush stdout) ">>> "
+        | ERR _ -> ()
+      in
+      SomeE Recurse
+    | NoneE err -> NoneE err)
 
 (** val client : string -> int -> unit optionE **)
 
 let client host portno =
-  let () = print_endline "Please enter a username (length 1-32, no spaces)" in
+  let () =
+    (fun s -> print_endline s; flush stdout)
+      "Please enter a username (length 1-32, no spaces)"
+  in
   let username_string = read_line () in
   (match new_username username_string with
    | SomeE uname ->
@@ -851,17 +1705,28 @@ let client host portno =
                   | MSG (_, _) -> NoneE "Server denied connection"
                   | ERR s -> NoneE (string_of_error s) with
             | SomeE num_users ->
-              let () = print_endline "what" in
               let () =
                 Proofchat.Logging._log Log_Info "Server accepted connection"
               in
               let () =
                 Proofchat.Logging._log Log_Info
-                  ((^) (string_of_int num_users) " other users connected")
+                  ((^) "Total users: " (string_of_int num_users))
               in
-              let () = Unix.sleep (Uint63.of_int (1000)) in
-              let () = print_endline "Closing connection to server" in
-              let () = Unix.close socket_fd in SomeE ()
+              (match (fun a b -> SomeE (Thread.create a b))
+                       client_send_thread socket_fd with
+               | SomeE input_thread ->
+                 (match (fun a b -> SomeE (Thread.create a b))
+                          client_recv_thread socket_fd with
+                  | SomeE recv_thread ->
+                    let () = Thread.join input_thread in
+                    let () = Thread.join recv_thread in
+                    let () =
+                      Proofchat.Logging._log Log_Info
+                        "Closing connection to server"
+                    in
+                    let () = Unix.close socket_fd in SomeE ()
+                  | NoneE err -> NoneE err)
+               | NoneE err -> NoneE err)
             | NoneE err -> NoneE err)
          | NoneE err -> NoneE err)
       | NoneE err -> NoneE err)

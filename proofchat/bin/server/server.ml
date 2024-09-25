@@ -48,30 +48,6 @@ module N =
   | S n' -> Npos (Pos.of_succ_nat n')
  end
 
-(** val rev : 'a1 list -> 'a1 list **)
-
-let rev l =
-  let rec rev0 = function
-  | [] -> []
-  | x :: l' -> app (rev0 l') (x :: [])
-  in rev0 l
-
-(** val concat : 'a1 list list -> 'a1 list **)
-
-let concat l =
-  let rec concat0 = function
-  | [] -> []
-  | x :: l1 -> app x (concat0 l1)
-  in concat0 l
-
-(** val map : ('a1 -> 'a2) -> 'a1 list -> 'a2 list **)
-
-let map f =
-  let rec map0 = function
-  | [] -> []
-  | a :: t -> (f a) :: (map0 t)
-  in map0
-
 (** val zero : char **)
 
 let zero = '\000'
@@ -110,9 +86,21 @@ let ascii_of_nat a =
 
 
 
-type 'x optionE =
-| SomeE of 'x
-| NoneE of string
+(** val concat : 'a1 list list -> 'a1 list **)
+
+let concat l =
+  let rec concat0 = function
+  | [] -> []
+  | x :: l1 -> app x (concat0 l1)
+  in concat0 l
+
+(** val map : ('a1 -> 'a2) -> 'a1 list -> 'a2 list **)
+
+let map f =
+  let rec map0 = function
+  | [] -> []
+  | a :: t -> (f a) :: (map0 t)
+  in map0
 
 (** val add : Uint63.t -> Uint63.t -> Uint63.t **)
 
@@ -121,10 +109,6 @@ let add = Uint63.add
 (** val sub : Uint63.t -> Uint63.t -> Uint63.t **)
 
 let sub = Uint63.sub
-
-(** val eqb : Uint63.t -> Uint63.t -> bool **)
-
-let eqb = Uint63.equal
 
 (** val ltsb : Uint63.t -> Uint63.t -> bool **)
 
@@ -138,6 +122,10 @@ let lesb = Uint63.les
 
 let max_int =
   (Uint63.of_int (4611686018427387903))
+
+type 'x optionE =
+| SomeE of 'x
+| NoneE of string
 
 type bytes = char list
 
@@ -153,10 +141,6 @@ let send = (fun a b c d e -> Unix.send a (Proofchat.Pfbytes.bytes_of_char_list b
 
 let recv = Proofchat.Pfbytes.functional_read
 
-(** val keep : 'a1 -> unit **)
-
-let keep = (fun _ -> ())
-
 (** val sub1_no_underflow : Uint63.t -> bool **)
 
 let sub1_no_underflow n0 =
@@ -169,17 +153,21 @@ type repeat_until_timeout_code =
 | EarlyStopFailure of string
 
 (** val repeat_until_timeout :
-    Uint63.t -> (unit -> repeat_until_timeout_code) -> unit optionE **)
+    Uint63.t -> (unit -> repeat_until_timeout_code optionE) -> unit optionE **)
 
 let repeat_until_timeout x x0 =
   let rec hrec timeout f _ =
     (if sub1_no_underflow timeout
      then (fun _ ->
             (match f () with
-             | Recurse ->
-               (fun _ -> hrec (sub timeout (Uint63.of_int (1))) f __)
-             | EarlyStopSuccess -> (fun _ -> SomeE ())
-             | EarlyStopFailure s -> (fun _ -> NoneE s)) __)
+             | SomeE x1 ->
+               (fun _ ->
+                 (match x1 with
+                  | Recurse ->
+                    (fun _ _ -> hrec (sub timeout (Uint63.of_int (1))) f __)
+                  | EarlyStopSuccess -> (fun _ _ -> SomeE ())
+                  | EarlyStopFailure s -> (fun _ _ -> NoneE s)) __ __)
+             | NoneE s -> (fun _ -> NoneE s)) __)
      else (fun _ -> NoneE "Timeout occurred")) __
   in hrec x x0 __
 
@@ -257,42 +245,6 @@ let create_list x0 x1 =
 let pad_string_r s b target_len =
   (^) s (string_of_bytes (create_list b (sub target_len (int_len_string s))))
 
-(** val trim_r : string -> char -> string **)
-
-let trim_r s b =
-  let aux =
-    let rec aux = function
-    | [] -> []
-    | a :: s' -> if (=) a b then aux s' else a :: s'
-    in aux
-  in
-  string_of_bytes (rev (aux (rev (bytes_of_string s))))
-
-(** val trim_null : bytes -> string **)
-
-let trim_null b =
-  trim_r (string_of_bytes b) '\x00'
-
-(** val first_n : 'a1 list -> Uint63.t -> 'a1 list optionE **)
-
-let rec first_n l n0 =
-  match l with
-  | [] ->
-    if eqb n0 (Uint63.of_int (0)) then SomeE [] else NoneE "first_n failure"
-  | h :: t ->
-    if lesb (Uint63.of_int (1)) n0
-    then (match first_n t (sub n0 (Uint63.of_int (1))) with
-          | SomeE rec_answer -> SomeE (h :: rec_answer)
-          | NoneE err -> NoneE err)
-    else SomeE []
-
-(** val last_n : 'a1 list -> Uint63.t -> 'a1 list optionE **)
-
-let last_n l n0 =
-  match first_n (rev l) n0 with
-  | SomeE aux -> SomeE (rev aux)
-  | NoneE err -> NoneE err
-
 type username =
   string
   (* singleton inductive, whose constructor was Build_username *)
@@ -324,6 +276,11 @@ let new_username s =
 let dummy_username =
   "X"
 
+(** val eqb : username -> username -> bool **)
+
+let eqb =
+  (=)
+
 (** val serialize_string : string -> bytes **)
 
 let serialize_string s =
@@ -340,537 +297,6 @@ type client_message =
 | MESG of string
 | PMSG of string * username
 | EXIT of username
-
-(** val deserialize_client_message : bytes -> client_message optionE **)
-
-let deserialize_client_message b = match b with
-| [] -> NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-| b0 :: t ->
-  (match b0 with
-   | '\x00' ->
-     let () = print_endline (string_of_int (int_len_list t)) in
-     (match new_username (trim_null t) with
-      | SomeE uname -> SomeE (REG uname)
-      | NoneE err -> NoneE err)
-   | '\x01' -> SomeE (MESG (trim_null t))
-   | '\x02' ->
-     (match first_n t (Uint63.of_int (32)) with
-      | SomeE name_bytes ->
-        (match new_username (string_of_bytes name_bytes) with
-         | SomeE uname ->
-           (match last_n t (sub (int_len_list t) (Uint63.of_int (32))) with
-            | SomeE msg_bytes -> SomeE (PMSG ((trim_null msg_bytes), uname))
-            | NoneE err -> NoneE err)
-         | NoneE err -> NoneE err)
-      | NoneE err -> NoneE err)
-   | '\x03' ->
-     (match new_username (trim_null t) with
-      | SomeE uname -> SomeE (EXIT uname)
-      | NoneE err -> NoneE err)
-   | '\x04' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x05' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x06' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x07' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x08' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\t' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\n' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x0b' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x0c' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\r' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x0e' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x0f' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x10' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x11' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x12' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x13' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x14' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x15' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x16' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x17' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x18' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x19' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x1a' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x1b' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x1c' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x1d' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x1e' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x1f' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | ' ' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '!' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '"' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '#' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '$' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '%' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '&' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\'' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '(' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | ')' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '*' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '+' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | ',' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '-' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '.' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '/' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '0' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '1' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '2' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '3' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '4' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '5' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '6' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '7' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '8' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '9' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | ':' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | ';' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '<' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '=' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '>' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '?' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '@' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'A' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'B' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'C' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'D' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'E' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'F' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'G' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'H' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'I' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'J' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'K' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'L' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'M' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'N' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'O' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'P' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'Q' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'R' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'S' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'T' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'U' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'V' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'W' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'X' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'Y' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'Z' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '[' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\\' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | ']' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '^' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '_' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '`' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'a' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'b' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'c' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'd' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'e' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'f' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'g' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'h' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'i' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'j' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'k' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'l' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'm' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'n' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'o' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'p' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'q' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'r' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 's' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 't' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'u' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'v' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'w' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'x' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'y' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | 'z' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '{' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '|' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '}' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '~' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x7f' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x80' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x81' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x82' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x83' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x84' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x85' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x86' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x87' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x88' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x89' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x8a' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x8b' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x8c' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x8d' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x8e' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x8f' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x90' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x91' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x92' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x93' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x94' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x95' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x96' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x97' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x98' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x99' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x9a' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x9b' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x9c' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x9d' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x9e' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\x9f' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xa0' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xa1' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xa2' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xa3' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xa4' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xa5' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xa6' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xa7' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xa8' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xa9' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xaa' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xab' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xac' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xad' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xae' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xaf' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xb0' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xb1' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xb2' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xb3' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xb4' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xb5' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xb6' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xb7' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xb8' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xb9' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xba' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xbb' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xbc' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xbd' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xbe' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xbf' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xc0' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xc1' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xc2' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xc3' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xc4' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xc5' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xc6' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xc7' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xc8' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xc9' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xca' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xcb' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xcc' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xcd' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xce' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xcf' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xd0' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xd1' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xd2' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xd3' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xd4' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xd5' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xd6' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xd7' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xd8' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xd9' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xda' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xdb' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xdc' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xdd' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xde' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xdf' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xe0' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xe1' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xe2' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xe3' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xe4' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xe5' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xe6' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xe7' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xe8' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xe9' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xea' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xeb' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xec' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xed' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xee' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xef' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xf0' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xf1' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xf2' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xf3' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xf4' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xf5' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xf6' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xf7' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xf8' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xf9' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xfa' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xfb' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xfc' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xfd' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xfe' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b))
-   | '\xff' ->
-     NoneE ((^) "Client message code not recognized: " (string_of_bytes b)))
 
 type error =
 | UsernameTaken
@@ -928,29 +354,1123 @@ let resend x x0 x1 x2 x3 =
               ((^) (string_of_bytes message) "'")))) __
   in hrec x x0 x1 x2 x3 __
 
-(** val max_message_len : Uint63.t **)
-
-let max_message_len =
-  (Uint63.of_int (4096))
-
 (** val send_message : Unix.file_descr -> bytes -> unit optionE **)
 
 let send_message sockfd message =
-  if ltsb max_message_len (int_len_list message)
-  then NoneE "Messages cannot exceed 4kb"
-  else resend (Uint63.of_int (100)) (Uint63.of_int (0)) sockfd message
-         (int_len_list message)
+  resend (Uint63.of_int (100)) (Uint63.of_int (0)) sockfd message
+    (int_len_list message)
 
 (** val recv_message : Unix.file_descr -> Uint63.t -> bytes optionE **)
 
 let recv_message sockfd len =
   let (_, out) = recv sockfd (Uint63.of_int (0)) len [] in SomeE out
 
+(** val recv_int : Unix.file_descr -> Uint63.t optionE **)
+
+let recv_int sockfd =
+  match recv_message sockfd (Uint63.of_int (8)) with
+  | SomeE n_bytes -> SomeE (Proofchat.Pfbytes.bytes_to_int63 n_bytes)
+  | NoneE err -> NoneE err
+
+(** val recv_string : Unix.file_descr -> string optionE **)
+
+let recv_string sockfd =
+  match recv_int sockfd with
+  | SomeE str_len ->
+    (match recv_message sockfd str_len with
+     | SomeE str_bytes -> SomeE (string_of_bytes str_bytes)
+     | NoneE err -> NoneE err)
+  | NoneE err -> NoneE err
+
+(** val recv_username : Unix.file_descr -> username optionE **)
+
+let recv_username sockfd =
+  match recv_message sockfd (Uint63.of_int (32)) with
+  | SomeE username_bytes ->
+    (match new_username (string_of_bytes username_bytes) with
+     | SomeE uname -> SomeE uname
+     | NoneE err -> NoneE err)
+  | NoneE err -> NoneE err
+
+(** val recv_client_REG : Unix.file_descr -> client_message optionE **)
+
+let recv_client_REG sockfd =
+  match recv_username sockfd with
+  | SomeE uname -> SomeE (REG uname)
+  | NoneE err -> NoneE err
+
+(** val recv_client_MESG : Unix.file_descr -> client_message optionE **)
+
+let recv_client_MESG sockfd =
+  match recv_string sockfd with
+  | SomeE msg -> SomeE (MESG msg)
+  | NoneE err -> NoneE err
+
+(** val recv_client_PMSG : Unix.file_descr -> client_message optionE **)
+
+let recv_client_PMSG sockfd =
+  match recv_username sockfd with
+  | SomeE uname ->
+    (match recv_string sockfd with
+     | SomeE msg -> SomeE (PMSG (msg, uname))
+     | NoneE err -> NoneE err)
+  | NoneE err -> NoneE err
+
+(** val recv_client_EXIT : Unix.file_descr -> client_message optionE **)
+
+let recv_client_EXIT sockfd =
+  match recv_username sockfd with
+  | SomeE uname -> SomeE (EXIT uname)
+  | NoneE err -> NoneE err
+
 (** val recv_client_message : Unix.file_descr -> client_message optionE **)
 
 let recv_client_message sockfd =
-  match recv_message sockfd max_message_len with
-  | SomeE msg_bytes -> deserialize_client_message msg_bytes
+  match recv_message sockfd (Uint63.of_int (1)) with
+  | SomeE code ->
+    (match code with
+     | [] ->
+       NoneE
+         ((^) "Failed to receive client message with opcode "
+           (string_of_bytes code))
+     | b :: l ->
+       (match b with
+        | '\x00' ->
+          (match l with
+           | [] -> recv_client_REG sockfd
+           | _ :: _ ->
+             NoneE
+               ((^) "Failed to receive client message with opcode "
+                 (string_of_bytes code)))
+        | '\x01' ->
+          (match l with
+           | [] -> recv_client_MESG sockfd
+           | _ :: _ ->
+             NoneE
+               ((^) "Failed to receive client message with opcode "
+                 (string_of_bytes code)))
+        | '\x02' ->
+          (match l with
+           | [] -> recv_client_PMSG sockfd
+           | _ :: _ ->
+             NoneE
+               ((^) "Failed to receive client message with opcode "
+                 (string_of_bytes code)))
+        | '\x03' ->
+          (match l with
+           | [] -> recv_client_EXIT sockfd
+           | _ :: _ ->
+             NoneE
+               ((^) "Failed to receive client message with opcode "
+                 (string_of_bytes code)))
+        | '\x04' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x05' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x06' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x07' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x08' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\t' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\n' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x0b' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x0c' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\r' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x0e' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x0f' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x10' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x11' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x12' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x13' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x14' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x15' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x16' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x17' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x18' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x19' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x1a' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x1b' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x1c' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x1d' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x1e' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x1f' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | ' ' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '!' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '"' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '#' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '$' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '%' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '&' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\'' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '(' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | ')' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '*' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '+' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | ',' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '-' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '.' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '/' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '0' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '1' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '2' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '3' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '4' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '5' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '6' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '7' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '8' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '9' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | ':' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | ';' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '<' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '=' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '>' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '?' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '@' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'A' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'B' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'C' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'D' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'E' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'F' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'G' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'H' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'I' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'J' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'K' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'L' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'M' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'N' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'O' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'P' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'Q' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'R' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'S' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'T' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'U' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'V' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'W' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'X' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'Y' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'Z' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '[' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\\' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | ']' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '^' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '_' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '`' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'a' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'b' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'c' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'd' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'e' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'f' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'g' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'h' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'i' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'j' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'k' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'l' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'm' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'n' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'o' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'p' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'q' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'r' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 's' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 't' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'u' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'v' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'w' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'x' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'y' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | 'z' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '{' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '|' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '}' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '~' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x7f' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x80' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x81' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x82' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x83' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x84' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x85' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x86' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x87' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x88' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x89' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x8a' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x8b' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x8c' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x8d' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x8e' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x8f' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x90' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x91' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x92' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x93' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x94' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x95' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x96' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x97' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x98' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x99' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x9a' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x9b' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x9c' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x9d' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x9e' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\x9f' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xa0' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xa1' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xa2' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xa3' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xa4' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xa5' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xa6' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xa7' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xa8' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xa9' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xaa' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xab' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xac' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xad' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xae' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xaf' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xb0' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xb1' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xb2' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xb3' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xb4' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xb5' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xb6' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xb7' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xb8' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xb9' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xba' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xbb' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xbc' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xbd' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xbe' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xbf' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xc0' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xc1' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xc2' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xc3' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xc4' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xc5' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xc6' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xc7' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xc8' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xc9' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xca' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xcb' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xcc' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xcd' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xce' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xcf' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xd0' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xd1' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xd2' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xd3' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xd4' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xd5' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xd6' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xd7' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xd8' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xd9' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xda' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xdb' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xdc' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xdd' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xde' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xdf' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xe0' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xe1' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xe2' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xe3' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xe4' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xe5' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xe6' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xe7' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xe8' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xe9' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xea' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xeb' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xec' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xed' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xee' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xef' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xf0' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xf1' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xf2' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xf3' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xf4' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xf5' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xf6' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xf7' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xf8' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xf9' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xfa' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xfb' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xfc' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xfd' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xfe' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))
+        | '\xff' ->
+          NoneE
+            ((^) "Failed to receive client message with opcode "
+              (string_of_bytes code))))
   | NoneE err -> NoneE err
 
 (** val cc_uname : Proofchat.Serverstate.client_connection -> username **)
@@ -970,25 +1490,45 @@ let cc_addr = function
 | (_, _, cc_addr0) -> cc_addr0
 
 (** val server_client_communication :
+    username -> Proofchat.Serverstate.client_connection -> unit optionE **)
+
+let server_client_communication uname cc =
+  let () = Proofchat.Logging._log Log_Info ((^) uname " has joined") in
+  let cc0 = (uname, (cc_descr cc), (cc_addr cc)) in
+  let () = Proofchat.Serverstate.add_connection cc0 in
+  (match send_message (cc_descr cc0)
+           (serialize_server_message (ACK
+             ((int_len_list (Proofchat.Serverstate.get_connection_list ())),
+             (map cc_uname (Proofchat.Serverstate.get_connection_list ()))))) with
+   | SomeE _ ->
+     repeat_until_timeout max_int (fun _ ->
+       match recv_client_message (cc_descr cc0) with
+       | SomeE x ->
+         (match x with
+          | REG _ -> SomeE (EarlyStopFailure "unrecognized message")
+          | MESG msg ->
+            let () =
+              Proofchat.Logging._log Log_Info
+                ((^) (cc_uname cc0) ((^) ": " msg))
+            in
+            (match SomeE
+             (map (fun conn ->
+               if eqb (cc_uname conn) uname
+               then SomeE ()
+               else send_message (cc_descr conn)
+                      (serialize_server_message (MSG (uname, msg))))
+               (Proofchat.Serverstate.get_connection_list ())) with
+             | SomeE _ -> SomeE Recurse
+             | NoneE err -> NoneE err)
+          | PMSG (_, _) -> SomeE (EarlyStopFailure "unrecognized message")
+          | EXIT _ -> SomeE (EarlyStopFailure "unrecognized message"))
+       | NoneE _ -> SomeE (EarlyStopFailure "unrecognized message"))
+   | NoneE err -> NoneE err)
+
+(** val init_client_comms :
     Proofchat.Serverstate.client_connection -> unit optionE **)
 
-let server_client_communication cc =
-  repeat_until_timeout max_int (fun _ ->
-    match recv_client_message (cc_descr cc) with
-    | SomeE x ->
-      (match x with
-       | REG _ -> EarlyStopFailure "unrecognized message"
-       | MESG msg ->
-         let () = print_endline ((^) (cc_uname cc) ((^) " said " msg)) in
-         Recurse
-       | PMSG (_, _) -> EarlyStopFailure "unrecognized message"
-       | EXIT _ -> EarlyStopFailure "unrecognized message")
-    | NoneE _ -> EarlyStopFailure "unrecognized message")
-
-(** val recv_client_message0 :
-    Proofchat.Serverstate.client_connection -> unit optionE **)
-
-let recv_client_message0 cc =
+let init_client_comms cc =
   let () = Proofchat.Logging._log Log_Debug "Accepted new connection" in
   (match recv_client_message (cc_descr cc) with
    | SomeE x ->
@@ -1004,12 +1544,7 @@ let recv_client_message0 cc =
                     (serialize_server_message (ERR UsernameTaken)) with
             | SomeE _ -> SomeE ()
             | NoneE err -> NoneE err)
-         | None ->
-           let () = Proofchat.Logging._log Log_Info ((^) uname " has joined")
-           in
-           let cc0 = (uname, (cc_descr cc), (cc_addr cc)) in
-           let () = Proofchat.Serverstate.add_connection cc0 in
-           server_client_communication cc0)
+         | None -> server_client_communication uname cc)
       | MESG _ ->
         let () =
           Proofchat.Logging._log Log_Error
@@ -1042,12 +1577,10 @@ let server_accept_thread socket_fd =
       Proofchat.Logging._log Log_Debug
         ((^) "Accepted client socket " (string_of_socket_addr client_addr))
     in
-    let () =
-      keep
-        (Thread.create recv_client_message0 (dummy_username, client_descr,
-          client_addr))
-    in
-    Recurse)
+    (match (fun a b -> SomeE (Thread.create a b)) init_client_comms
+             (dummy_username, client_descr, client_addr) with
+     | SomeE _ -> SomeE Recurse
+     | NoneE err -> NoneE err))
 
 (** val server : string -> int -> unit optionE **)
 

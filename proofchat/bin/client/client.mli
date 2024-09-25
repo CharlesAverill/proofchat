@@ -33,19 +33,6 @@ module N :
   val of_nat : nat -> n
  end
 
-val rev : 'a1 list -> 'a1 list
-
-val map : ('a1 -> 'a2) -> 'a1 list -> 'a2 list
-
-module Z :
- sig
-  val double : z -> z
-
-  val succ_double : z -> z
-
-  val opp : z -> z
- end
-
 val zero : char
 
 val one : char
@@ -60,11 +47,18 @@ val ascii_of_nat : nat -> char
 
 
 
-type 'x optionE =
-| SomeE of 'x
-| NoneE of string
+val rev : 'a1 list -> 'a1 list
 
-val strip_options : 'a1 optionE list -> 'a1 list optionE
+val map : ('a1 -> 'a2) -> 'a1 list -> 'a2 list
+
+module Z :
+ sig
+  val double : z -> z
+
+  val succ_double : z -> z
+
+  val opp : z -> z
+ end
 
 val lsr0 : Uint63.t -> Uint63.t -> Uint63.t
 
@@ -73,6 +67,8 @@ val land0 : Uint63.t -> Uint63.t -> Uint63.t
 val add : Uint63.t -> Uint63.t -> Uint63.t
 
 val sub : Uint63.t -> Uint63.t -> Uint63.t
+
+val mul : Uint63.t -> Uint63.t -> Uint63.t
 
 val eqb : Uint63.t -> Uint63.t -> bool
 
@@ -100,6 +96,12 @@ val max_int : Uint63.t
 
 val to_Z0 : Uint63.t -> z
 
+type 'x optionE =
+| SomeE of 'x
+| NoneE of string
+
+val strip_options : 'a1 optionE list -> 'a1 list optionE
+
 type bytes = char list
 
 val send :
@@ -111,6 +113,14 @@ val recv :
   Uint63.t * bytes
 
 val sub1_no_underflow : Uint63.t -> bool
+
+type repeat_until_timeout_code =
+| Recurse
+| EarlyStopSuccess
+| EarlyStopFailure of string
+
+val repeat_until_timeout :
+  Uint63.t -> (unit -> repeat_until_timeout_code optionE) -> unit optionE
 
 val space : char
 
@@ -173,17 +183,29 @@ type server_message =
 | MSG of username * string
 | ERR of error
 
-val deserialize_server_message : bytes -> server_message optionE
-
 val resend :
   Uint63.t -> Uint63.t -> Unix.file_descr -> bytes -> Uint63.t -> unit optionE
-
-val max_message_len : Uint63.t
 
 val send_message : Unix.file_descr -> bytes -> unit optionE
 
 val recv_message : Unix.file_descr -> Uint63.t -> bytes optionE
 
+val recv_int : Unix.file_descr -> Uint63.t optionE
+
+val recv_string : Unix.file_descr -> string optionE
+
+val recv_username : Unix.file_descr -> username optionE
+
+val recv_server_ACK : Unix.file_descr -> server_message optionE
+
+val recv_server_MSG : Unix.file_descr -> server_message optionE
+
+val recv_server_ERR : Unix.file_descr -> server_message optionE
+
 val recv_server_message : Unix.file_descr -> server_message optionE
+
+val client_send_thread : Unix.file_descr -> unit optionE
+
+val client_recv_thread : Unix.file_descr -> unit optionE
 
 val client : string -> int -> unit optionE

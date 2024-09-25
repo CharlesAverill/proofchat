@@ -26,35 +26,50 @@ Axiom remove_connection : client_connection -> unit.
 Axiom get_connection : username -> option client_connection.
 Axiom get_connection_list : unit -> list client_connection.
 
-Definition server_client_communication (cc : client_connection) : optionE unit :=
+Definition server_client_communication (uname : username) (cc : client_connection) : optionE unit :=
+    (* Add the new connection *)
+    let* _ <= log Log_Info (uname.(Uname) ++ " has joined") #;
+    let cc := {|
+        cc_uname := uname; 
+        cc_descr := cc.(cc_descr); 
+        cc_addr := cc.(cc_addr)
+    |} in
+    let* _ <= add_connection cc #;
+    (* Acknowledge the join *)
+    _ <- send_message cc.(cc_descr) (serialize_server_message
+        (ACK 
+            (int_len_list (get_connection_list tt)) 
+            (List.map (fun cc => cc.(cc_uname)) (get_connection_list tt))
+        )) ;;
     repeat_until_timeout max_int (fun _ =>
         match recv_client_message cc.(cc_descr) with
         | SomeE (MESG msg) =>
-            let* _ <= print_endline (cc.(cc_uname).(Uname) ++ " said " ++ msg) #;
-            Recurse
-        | _ => EarlyStopFailure ("unrecognized message") 
+            let* _ <= log Log_Info (cc.(cc_uname).(Uname) ++ ": " ++ msg) #;
+            _ <- SomeE (List.map (fun conn =>
+                (* Don't send a message to the user that sent it *)
+                if conn.(cc_uname) =? uname then
+                    return tt
+                else
+                    send_message conn.(cc_descr) (serialize_server_message (
+                        MSG uname msg
+                    ))
+            ) (get_connection_list tt)) ;;
+            return Recurse
+        | _ => return EarlyStopFailure ("unrecognized message") 
         end
     ).
 
 (** Do initial processing of client connection, and then start communicating
     with the client *)
-Definition recv_client_message (cc : client_connection) : optionE unit :=
+Definition init_client_comms (cc : client_connection) : optionE unit :=
     let* _ <= log Log_Debug "Accepted new connection" #;
     (* Read 33 bytes - should be a REG message *)
     match (recv_client_message cc.(cc_descr)) with
     | SomeE (REG uname) =>
         match get_connection uname with
         (* Username is not taken *)
-        | None => 
-            (* Add the new connection *)
-            let* _ <= log Log_Info (uname.(Uname) ++ " has joined") #;
-            let cc := {|
-                cc_uname := uname; 
-                cc_descr := cc.(cc_descr); 
-                cc_addr := cc.(cc_addr)
-            |} in
-            let* _ <= add_connection cc #;
-            server_client_communication cc
+        | None =>
+            server_client_communication uname cc
         (* Username is taken *)
         | Some _ =>
             let* _ <= log Log_Error (uname.(Uname) ++ 
@@ -80,9 +95,9 @@ Definition server_accept_thread (socket_fd : file_descr) : optionE unit :=
         let '(client_descr, client_addr) := accept socket_fd in
         let* _ <= log Log_Debug 
             ("Accepted client socket " ++ (string_of_socket_addr client_addr)) #;
-        let* _ <= keep thread (create client_connection (optionE unit) recv_client_message
-            {|cc_uname := dummy_username; cc_descr := client_descr; cc_addr := client_addr|}) #;
-        Recurse
+        _ <- create client_connection (optionE unit) init_client_comms
+            {|cc_uname := dummy_username; cc_descr := client_descr; cc_addr := client_addr|} ;;
+        return Recurse
     ).
 
 (**

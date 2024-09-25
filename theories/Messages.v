@@ -101,6 +101,7 @@ Definition new_username (s : string) : optionE username.
         exact (NoneE ("Username cannot contain spaces: '" ++ s ++ "'")).
 Defined.
 
+(** A placeholder username *)
 Definition dummy_username : username.
     assert (1 <= to_Z (int_len_string "X") <= 32)%Z by
         (split; unfold to_Z, Uint63.to_Z; simpl; lia).
@@ -108,6 +109,12 @@ Definition dummy_username : username.
         (intro; destruct H0; [discriminate | auto]).
     exact {|Uname := "X"; ValidLength := H; NoSpaces := H0|}.
 Defined.
+
+(** Username equality *)
+Definition eqb (u1 u2 : username) : bool :=
+    String.eqb u1.(Uname) u2.(Uname).
+
+Notation "u1 =? u2" := (eqb u1 u2).
 
 (** ** Serialization
 
@@ -179,7 +186,6 @@ Definition serialize_client_message (cm : client_message) : bytes :=
 Definition deserialize_client_message (b : bytes) : optionE client_message :=
     match b with
     | x00 :: t => 
-        let* _ <= print_endline (string_of_int (int_len_list t)) #;
         uname <- new_username (trim_null t) ;;
         return (REG uname)
     | x01 :: t => return (MESG (trim_null t))
@@ -355,15 +361,9 @@ Function resend
     prove_sub1.
 Defined.
 
-(** Maximum length of message sent between sockets  *)
-Definition max_message_len : int := 4096.
-
 (** Wrapper for [resend] *)
 Definition send_message (sockfd : file_descr) (message : bytes) : optionE unit :=
-    if (max_message_len <? int_len_list message) then
-        fail "Messages cannot exceed 4kb"
-    else
-        resend 100 0 sockfd message (int_len_list message).
+    resend 100 0 sockfd message (int_len_list message).
 
 (** Receives a message from a socket *)
 Definition recv_message (sockfd : file_descr) (len : int) : optionE bytes :=
@@ -372,38 +372,81 @@ Definition recv_message (sockfd : file_descr) (len : int) : optionE bytes :=
     end.
 
 (** Receives a message from a socket and deserializes it as a client message *)
-Definition recv_client_message (sockfd : file_descr) : optionE client_message :=
+(* Definition recv_client_message (sockfd : file_descr) : optionE client_message :=
     msg_bytes <- recv_message sockfd max_message_len ;;
-    deserialize_client_message msg_bytes.
-
-(** Receives a message from a socket and deserializes it as a server message *)
-Definition recv_server_message (sockfd : file_descr) : optionE server_message :=
-    msg_bytes <- recv_message sockfd max_message_len ;;
-    deserialize_server_message msg_bytes.
+    deserialize_client_message msg_bytes. *)
 
 (** Receives an int from a socket *)
 Definition recv_int (sockfd : file_descr) : optionE int :=
     n_bytes <- recv_message sockfd 8 ;;
     return bytes_to_int63 (n_bytes).
 
+(** Receives a string from a socket *)
+Definition recv_string (sockfd : file_descr) : optionE string :=
+    str_len <- recv_int sockfd ;;
+    str_bytes <- recv_message sockfd str_len ;;
+    return string_of_bytes (str_bytes).
+
+Definition recv_username (sockfd : file_descr) : optionE username :=
+    username_bytes <- recv_message sockfd 32 ;;
+    uname <- new_username (string_of_bytes username_bytes) ;;
+    return uname.
+
 (** Receives an ACK message *)
-Definition recv_ACK (sockfd : file_descr) 
-        : optionE (int * list username) :=
-    code <- recv_message sockfd 1 ;;
-    _ <- (match code with 
-          | [x00] => SomeE tt
-          | [x02] => 
-            error_code <- recv_int sockfd ;;
-            NoneE (string_of_error (error_of_int error_code))
-          | _ => NoneE ("Tried to receive ACK, got byte " ++ 
-                        string_of_bytes code)
-          end) ;;
-    (* Receive a serialized int63 detailing number of 
-       connected users *)
+Definition recv_server_ACK (sockfd : file_descr) : optionE server_message :=
+    (* Receive a serialized int63 detailing number of connected users *)
     num_users <- recv_int sockfd ;;
     usernames_bytes <- recv_message sockfd (num_users * 32) ;;
     usernames_split <- divide byte usernames_bytes 32 num_users ;;
     let option_usernames := List.map
         (fun b => new_username (string_of_bytes b)) usernames_split in
     usernames <- strip_options option_usernames ;;
-    return (num_users, usernames).
+    return ACK num_users usernames.
+
+(** Receives a server MSG message *)
+Definition recv_server_MSG (sockfd : file_descr) : optionE server_message :=
+    username <- recv_username sockfd ;;
+    msg <- recv_string sockfd ;;
+    return MSG username msg.
+
+Definition recv_server_ERR (sockfd : file_descr) : optionE server_message :=
+    err_code <- recv_int sockfd ;;
+    return ERR (error_of_int err_code).
+
+(** Consumes the message code and dispatches to specific receiver functions to
+    deserialize and parse a server message*)
+Definition recv_server_message (sockfd : file_descr) : optionE server_message :=
+    code <- recv_message sockfd 1 ;;
+    match code with
+    | [x00] => recv_server_ACK sockfd
+    | [x01] => recv_server_MSG sockfd
+    | [x02] => recv_server_ERR sockfd
+    | _ => fail ("Failed to receieve server message with opcode " ++ (string_of_bytes code))
+    end.
+
+Definition recv_client_REG (sockfd : file_descr) : optionE client_message :=
+    uname <- recv_username sockfd ;;
+    return REG uname.
+
+Definition recv_client_MESG (sockfd : file_descr) : optionE client_message :=
+    msg <- recv_string sockfd ;;
+    return MESG msg.
+
+Definition recv_client_PMSG (sockfd : file_descr) : optionE client_message :=
+    uname <- recv_username sockfd ;;
+    msg <- recv_string sockfd ;;
+    return PMSG msg uname.
+
+Definition recv_client_EXIT (sockfd : file_descr) : optionE client_message :=
+    uname <- recv_username sockfd ;;
+    return EXIT uname.
+
+Definition recv_client_message (sockfd : file_descr) : optionE client_message :=
+    code <- recv_message sockfd 1 ;;
+    match code with
+    | [x00] => recv_client_REG sockfd
+    | [x01] => recv_client_MESG sockfd
+    | [x02] => recv_client_PMSG sockfd
+    | [x03] => recv_client_EXIT sockfd
+    | _ => fail ("Failed to receive client message with opcode " ++ (string_of_bytes code))
+    end.

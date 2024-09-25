@@ -43,11 +43,13 @@ Axiom sleep : int -> unit.
 Axiom inet_addr_of_string : string -> inet_addr.
 Axiom string_of_inet_addr : inet_addr -> string.
 Axiom getsockname : file_descr -> sockaddr.
-Axiom create : forall (X Y : Type), (X -> Y) -> X -> thread.
+Axiom create : forall (X Y : Type), (X -> Y) -> X -> optionE thread.
 Axiom join : thread -> unit.
 Axiom exit : unit -> unit.
 
 Axiom keep : forall (X : Type), X -> unit.
+
+Axiom newline : string.
 
 (** These are implemented in Proofchat.Pfbytes, but should be moved to a Coq
     definition soon so that we can prove correctness of deserialization *)
@@ -112,10 +114,11 @@ Inductive repeat_until_timeout_code : Type :=
     Calls a function f until either it terminates with SomeE tt,
     or timeout occurs
 *)
-Function repeat_until_timeout (timeout : int) (f : unit -> repeat_until_timeout_code)
+Function repeat_until_timeout (timeout : int) (f : unit -> optionE repeat_until_timeout_code)
         {measure (fun x => (Z.to_nat (to_Z x))) timeout} : optionE unit :=
     (if sub1_no_underflow timeout then
-        match f tt with
+        f_tt_result <- f tt ;;
+        match f_tt_result with
         | Recurse => repeat_until_timeout (timeout - 1) f
         | EarlyStopSuccess => return tt
         | EarlyStopFailure err => fail err

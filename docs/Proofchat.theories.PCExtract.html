@@ -33,7 +33,7 @@
 <div class="code">
 
 <br/>
-<span class="id" title="keyword">Require</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.extraction.Extraction.html#"><span class="id" title="library">Extraction</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="library">Extraction</span>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.StringTheory.html#"><span class="id" title="library">StringTheory</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.Client.html#"><span class="id" title="library">Client</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Proofchat.theories.Server.html#"><span class="id" title="library">Server</span></a>.<br/>
@@ -56,10 +56,10 @@
 </div>
 <div class="code">
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">read_line</span> ⇒ "read_line".<br/>
-<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_int</span> ⇒ "print_int".<br/>
-<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_string</span> ⇒ "print_string".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_int</span> ⇒ "(fun i -&gt; print_int i; flush stdout)".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_string</span> ⇒ "(fun s -&gt; print_string s; flush stdout)".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_bytes</span> ⇒ "(fun b -&gt; print_bytes (Proofchat.Pfbytes.bytes_of_char_list b))".<br/>
-<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_endline</span> ⇒ "print_endline".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">print_endline</span> ⇒ "(fun s -&gt; print_endline s; flush stdout)".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">string_of_int</span> ⇒ "string_of_int".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">socket</span> ⇒ "Unix.socket".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">sleep</span> ⇒ "Unix.sleep".<br/>
@@ -77,11 +77,12 @@
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">close</span> ⇒ "Unix.close".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">int63_to_bytes</span> ⇒ "Proofchat.Pfbytes.int63_to_bytes".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">bytes_to_int63</span> ⇒ "Proofchat.Pfbytes.bytes_to_int63".<br/>
-<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">create</span> ⇒ "Thread.create".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">create</span> ⇒ "(fun a b -&gt; SomeE (Thread.create a b))".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">join</span> ⇒ "Thread.join".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">exit</span> ⇒ "Thread.exit".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Constant</span> <span class="id" title="var">keep</span> ⇒ "(fun _ -&gt; ())".<br/>
 <span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">log</span> ⇒ "Proofchat.Logging._log".<br/>
+<span class="id" title="keyword">Extract</span> <span class="id" title="var">Inlined</span> <span class="id" title="var">Constant</span> <span class="id" title="var">newline</span> ⇒ "Proofchat.Logging.newline".<br/>
 
 <br/>
 </div>

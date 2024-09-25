@@ -1,6 +1,6 @@
 (** * Unix
 
-    Replicating behaviors from OCaml's Unix module
+    Replicating types from OCaml's Unix module
 *)
 
 Require Export String.

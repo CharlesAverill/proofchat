@@ -13,7 +13,7 @@ type log_type =
   | Log_Error
   | Log_Critical
 
-let _GLOBAL_LOG_LEVEL = Log_Info
+let _GLOBAL_LOG_LEVEL = Log_Debug
 
 (** Follows the order in the type definition, \[0:5\]*)
 let int_of_log = function
@@ -95,3 +95,5 @@ let _log log_level message =
     Printf.fprintf stream "LOG:%s%s - %s\n" (string_of_log log_level) ansi_reset
       message ;
     flush stream
+
+let newline = "\n"

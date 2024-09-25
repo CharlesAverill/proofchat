@@ -12,8 +12,28 @@ Open Scope monad_scope.
 (**
     The internal loop of our client sending thread
 *)
-Definition client_send_thread_internal (_ : unit) : optionE unit :=
-    repeat_until_timeout max_int (fun _ => EarlyStopFailure "not implemented").
+Definition client_send_thread (sockfd : file_descr) : optionE unit :=
+    repeat_until_timeout max_int (fun _ => 
+        let* _ <= print_string ">>> " #;
+        let msg := read_line tt in
+        _ <- send_message sockfd (serialize_client_message (MESG msg)) ;;
+        SomeE Recurse
+    ).
+
+(**
+    The internal loop of our client receiving thread
+*)
+Definition client_recv_thread (sockfd : file_descr) : optionE unit :=
+    repeat_until_timeout max_int (fun _ => 
+        server_msg <- recv_server_message sockfd ;;
+        let* _ <= (match server_msg with
+        | MSG uname msg =>
+            let* _ <= print_endline (uname.(Uname) ++ ": " ++ msg) #;
+            print_string ">>> "
+        | _ => tt
+        end) #;
+        SomeE Recurse
+    ).
 
 (**
     Wraps up all client logic: port binding, threading, etc.
@@ -39,13 +59,15 @@ Definition client (host : string) (portno : port) : optionE unit :=
                   | ERR s => fail (string_of_error s)
                   | _ => fail "Server denied connection"
                   end) ;;
-    let* _ <= print_endline "what" #;
     let* _ <= log Log_Info "Server accepted connection" #;
-    let* _ <= log Log_Info ((string_of_int num_users) ++ " other users connected") #;
-    let* _ <= sleep 1000 #;
     (* Display chatroom information to user output *)
-    (* Wait for user input *)
-    (* Wait for chat messages from server *)
-    let* _ <= print_endline "Closing connection to server" #;
+    let* _ <= log Log_Info ("Total users: " ++ (string_of_int num_users)) #;
+    (* Get user input *)
+    input_thread <- create file_descr (optionE unit) client_send_thread socket_fd ;;
+    (* Display server messages *)
+    recv_thread <- create file_descr (optionE unit) client_recv_thread socket_fd ;;
+    let* _ <= join input_thread #;
+    let* _ <= join recv_thread #;
+    let* _ <= log Log_Info "Closing connection to server" #;
     let* _ <= close socket_fd #;
     return tt.
