@@ -26,6 +26,12 @@ module N :
   val of_nat : nat -> n
  end
 
+val concat : 'a1 list list -> 'a1 list
+
+val map : ('a1 -> 'a2) -> 'a1 list -> 'a2 list
+
+val filter : ('a1 -> bool) -> 'a1 list -> 'a1 list
+
 val zero : char
 
 val one : char
@@ -40,9 +46,9 @@ val ascii_of_nat : nat -> char
 
 
 
-val concat : 'a1 list list -> 'a1 list
-
-val map : ('a1 -> 'a2) -> 'a1 list -> 'a2 list
+type 'x optionE =
+| SomeE of 'x
+| NoneE of string
 
 val add : Uint63.t -> Uint63.t -> Uint63.t
 
@@ -53,10 +59,6 @@ val ltsb : Uint63.t -> Uint63.t -> bool
 val lesb : Uint63.t -> Uint63.t -> bool
 
 val max_int : Uint63.t
-
-type 'x optionE =
-| SomeE of 'x
-| NoneE of string
 
 type bytes = char list
 
@@ -171,5 +173,7 @@ val init_client_comms :
   Proofchat.Serverstate.client_connection -> unit optionE
 
 val server_accept_thread : Unix.file_descr -> unit optionE
+
+val server_control_thread : unit -> unit optionE
 
 val server : string -> int -> unit optionE

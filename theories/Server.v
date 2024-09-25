@@ -42,8 +42,9 @@ Definition server_client_communication (uname : username) (cc : client_connectio
             (List.map (fun cc => cc.(cc_uname)) (get_connection_list tt))
         )) ;;
     repeat_until_timeout max_int (fun _ =>
-        match recv_client_message cc.(cc_descr) with
-        | SomeE (MESG msg) =>
+        client_msg <- recv_client_message cc.(cc_descr) ;;
+        match client_msg with
+        | MESG msg =>
             let* _ <= log Log_Info (cc.(cc_uname).(Uname) ++ ": " ++ msg) #;
             _ <- SomeE (List.map (fun conn =>
                 (* Don't send a message to the user that sent it *)
@@ -55,6 +56,25 @@ Definition server_client_communication (uname : username) (cc : client_connectio
                     ))
             ) (get_connection_list tt)) ;;
             return Recurse
+        | PMSG msg uname =>
+            match (
+            target_cc <-
+                match List.filter
+                    (fun cc => cc.(cc_uname) =? uname) (get_connection_list tt) with
+                | [cc] => SomeE cc
+                | _ => 
+                    _ <- send_message cc.(cc_descr) 
+                        (serialize_server_message (ERR PmsgTargetNotExists)) ;;
+                    fail "PmsgTargetNotExists"
+                end ;;
+            send_message target_cc.(cc_descr)
+                    (serialize_server_message (MSG cc.(cc_uname) ("[PM] " ++ msg))))
+            with
+            | SomeE _ => return Recurse
+            | NoneE s =>
+                let* _ <= log Log_Error s #;
+                return Recurse
+            end
         | _ => return EarlyStopFailure ("unrecognized message") 
         end
     ).
@@ -100,6 +120,15 @@ Definition server_accept_thread (socket_fd : file_descr) : optionE unit :=
         return Recurse
     ).
 
+Definition server_control_thread (_ : unit) : optionE unit :=
+    repeat_until_timeout max_int (fun _ => 
+        command <- read_line tt ;;
+        if ((command =? "exit") || (command =? "quit"))%string then
+            return EarlyStopSuccess
+        else
+            return Recurse
+    ).
+
 (**
     Wraps up all server logic: port binding, threading, etc.
 *)
@@ -115,7 +144,10 @@ Definition server (host : string) (portno : port) : optionE unit :=
     (* Wait for and accept any incoming TCP connection requests. *)
     let* _ <= listen socket_fd 10 #;
     let* _ <= log Log_Info "Server started" #;
-    _ <- server_accept_thread socket_fd ;;
+    accept_thread <- create file_descr (optionE unit) server_accept_thread socket_fd ;;
+    control_thread <- create unit (optionE unit) server_control_thread tt ;;
+    (* _ <- join accept_thread ;; *)
+    let* _ <= join control_thread #;
     let* _ <= log Log_Info "Closing server" #;
     let* _ <= close socket_fd #;
     return tt.

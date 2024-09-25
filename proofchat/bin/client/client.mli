@@ -5,6 +5,10 @@ type nat =
 
 val app : 'a1 list -> 'a1 list -> 'a1 list
 
+val add : nat -> nat -> nat
+
+val sub : nat -> nat -> nat
+
 type positive =
 | XI of positive
 | XO of positive
@@ -25,12 +29,31 @@ module Pos :
 
   val pred_double : positive -> positive
 
+  val iter_op : ('a1 -> 'a1 -> 'a1) -> positive -> 'a1 -> 'a1
+
+  val to_nat : positive -> nat
+
   val of_succ_nat : nat -> positive
  end
 
 module N :
  sig
   val of_nat : nat -> n
+ end
+
+val rev : 'a1 list -> 'a1 list
+
+val map : ('a1 -> 'a2) -> 'a1 list -> 'a2 list
+
+module Z :
+ sig
+  val double : z -> z
+
+  val succ_double : z -> z
+
+  val opp : z -> z
+
+  val to_nat : z -> nat
  end
 
 val zero : char
@@ -47,26 +70,25 @@ val ascii_of_nat : nat -> char
 
 
 
-val rev : 'a1 list -> 'a1 list
+val get : nat -> string -> char option
 
-val map : ('a1 -> 'a2) -> 'a1 list -> 'a2 list
+val substring : nat -> nat -> string -> string
 
-module Z :
- sig
-  val double : z -> z
+val index : nat -> string -> string -> nat option
 
-  val succ_double : z -> z
+type 'x optionE =
+| SomeE of 'x
+| NoneE of string
 
-  val opp : z -> z
- end
+val strip_options : 'a1 optionE list -> 'a1 list optionE
 
 val lsr0 : Uint63.t -> Uint63.t -> Uint63.t
 
 val land0 : Uint63.t -> Uint63.t -> Uint63.t
 
-val add : Uint63.t -> Uint63.t -> Uint63.t
+val add0 : Uint63.t -> Uint63.t -> Uint63.t
 
-val sub : Uint63.t -> Uint63.t -> Uint63.t
+val sub0 : Uint63.t -> Uint63.t -> Uint63.t
 
 val mul : Uint63.t -> Uint63.t -> Uint63.t
 
@@ -96,12 +118,6 @@ val max_int : Uint63.t
 
 val to_Z0 : Uint63.t -> z
 
-type 'x optionE =
-| SomeE of 'x
-| NoneE of string
-
-val strip_options : 'a1 optionE list -> 'a1 list optionE
-
 type bytes = char list
 
 val send :
@@ -123,6 +139,10 @@ val repeat_until_timeout :
   Uint63.t -> (unit -> repeat_until_timeout_code optionE) -> unit optionE
 
 val space : char
+
+val space_str : string
+
+val ampersand : char
 
 val no_spaces : string -> bool
 

@@ -48,6 +48,30 @@ module N =
   | S n' -> Npos (Pos.of_succ_nat n')
  end
 
+(** val concat : 'a1 list list -> 'a1 list **)
+
+let concat l =
+  let rec concat0 = function
+  | [] -> []
+  | x :: l1 -> app x (concat0 l1)
+  in concat0 l
+
+(** val map : ('a1 -> 'a2) -> 'a1 list -> 'a2 list **)
+
+let map f =
+  let rec map0 = function
+  | [] -> []
+  | a :: t -> (f a) :: (map0 t)
+  in map0
+
+(** val filter : ('a1 -> bool) -> 'a1 list -> 'a1 list **)
+
+let filter f =
+  let rec filter0 = function
+  | [] -> []
+  | x :: l0 -> if f x then x :: (filter0 l0) else filter0 l0
+  in filter0
+
 (** val zero : char **)
 
 let zero = '\000'
@@ -86,21 +110,9 @@ let ascii_of_nat a =
 
 
 
-(** val concat : 'a1 list list -> 'a1 list **)
-
-let concat l =
-  let rec concat0 = function
-  | [] -> []
-  | x :: l1 -> app x (concat0 l1)
-  in concat0 l
-
-(** val map : ('a1 -> 'a2) -> 'a1 list -> 'a2 list **)
-
-let map f =
-  let rec map0 = function
-  | [] -> []
-  | a :: t -> (f a) :: (map0 t)
-  in map0
+type 'x optionE =
+| SomeE of 'x
+| NoneE of string
 
 (** val add : Uint63.t -> Uint63.t -> Uint63.t **)
 
@@ -122,10 +134,6 @@ let lesb = Uint63.les
 
 let max_int =
   (Uint63.of_int (4611686018427387903))
-
-type 'x optionE =
-| SomeE of 'x
-| NoneE of string
 
 type bytes = char list
 
@@ -1503,8 +1511,8 @@ let server_client_communication uname cc =
    | SomeE _ ->
      repeat_until_timeout max_int (fun _ ->
        match recv_client_message (cc_descr cc0) with
-       | SomeE x ->
-         (match x with
+       | SomeE client_msg ->
+         (match client_msg with
           | REG _ -> SomeE (EarlyStopFailure "unrecognized message")
           | MESG msg ->
             let () =
@@ -1520,9 +1528,35 @@ let server_client_communication uname cc =
                (Proofchat.Serverstate.get_connection_list ())) with
              | SomeE _ -> SomeE Recurse
              | NoneE err -> NoneE err)
-          | PMSG (_, _) -> SomeE (EarlyStopFailure "unrecognized message")
+          | PMSG (msg, uname0) ->
+            (match match match filter (fun cc1 -> eqb (cc_uname cc1) uname0)
+                                 (Proofchat.Serverstate.get_connection_list
+                                   ()) with
+                         | [] ->
+                           (match send_message (cc_descr cc0)
+                                    (serialize_server_message (ERR
+                                      PmsgTargetNotExists)) with
+                            | SomeE _ -> NoneE "PmsgTargetNotExists"
+                            | NoneE err -> NoneE err)
+                         | cc1 :: l ->
+                           (match l with
+                            | [] -> SomeE cc1
+                            | _ :: _ ->
+                              (match send_message (cc_descr cc0)
+                                       (serialize_server_message (ERR
+                                         PmsgTargetNotExists)) with
+                               | SomeE _ -> NoneE "PmsgTargetNotExists"
+                               | NoneE err -> NoneE err)) with
+                   | SomeE target_cc ->
+                     send_message (cc_descr target_cc)
+                       (serialize_server_message (MSG ((cc_uname cc0),
+                         ((^) "[PM] " msg))))
+                   | NoneE err -> NoneE err with
+             | SomeE _ -> SomeE Recurse
+             | NoneE s ->
+               let () = Proofchat.Logging._log Log_Error s in SomeE Recurse)
           | EXIT _ -> SomeE (EarlyStopFailure "unrecognized message"))
-       | NoneE _ -> SomeE (EarlyStopFailure "unrecognized message"))
+       | NoneE err -> NoneE err)
    | NoneE err -> NoneE err)
 
 (** val init_client_comms :
@@ -1582,6 +1616,17 @@ let server_accept_thread socket_fd =
      | SomeE _ -> SomeE Recurse
      | NoneE err -> NoneE err))
 
+(** val server_control_thread : unit -> unit optionE **)
+
+let server_control_thread _ =
+  repeat_until_timeout max_int (fun _ ->
+    match (fun _ -> SomeE (read_line ())) () with
+    | SomeE command ->
+      if (||) ((=) command "exit") ((=) command "quit")
+      then SomeE EarlyStopSuccess
+      else SomeE Recurse
+    | NoneE err -> NoneE err)
+
 (** val server : string -> int -> unit optionE **)
 
 let server host portno =
@@ -1600,8 +1645,12 @@ let server host portno =
   let () = Unix.bind socket_fd socket_addr in
   let () = Unix.listen socket_fd (Uint63.of_int (10)) in
   let () = Proofchat.Logging._log Log_Info "Server started" in
-  (match server_accept_thread socket_fd with
+  (match (fun a b -> SomeE (Thread.create a b)) server_accept_thread socket_fd with
    | SomeE _ ->
-     let () = Proofchat.Logging._log Log_Info "Closing server" in
-     let () = Unix.close socket_fd in SomeE ()
+     (match (fun a b -> SomeE (Thread.create a b)) server_control_thread () with
+      | SomeE control_thread ->
+        let () = Thread.join control_thread in
+        let () = Proofchat.Logging._log Log_Info "Closing server" in
+        let () = Unix.close socket_fd in SomeE ()
+      | NoneE err -> NoneE err)
    | NoneE err -> NoneE err)

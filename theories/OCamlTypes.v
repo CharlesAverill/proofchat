@@ -25,7 +25,7 @@ Require Export Unix.
 Require Export Monads.
 
 (** Functions *)
-Axiom read_line : unit -> string.
+Axiom read_line : unit -> optionE string.
 Axiom print_string : string -> unit.
 Axiom print_bytes : bytes -> unit.
 Axiom print_int : int -> unit.

@@ -29,9 +29,31 @@ Fixpoint InString (a : ascii) (s : string) : Prop :=
 Definition space : ascii := ascii_of_nat 32.
 
 (**
-    Ensure the character index is correct
+    String representation of the space character
 *)
-Goal String space EmptyString = " ".
+Definition space_str : string := String space EmptyString.
+
+(**
+    Ensure the space character index is correct
+*)
+Goal space_str = " ".
+    reflexivity.
+Qed.
+
+(**
+    Standard ASCII representation of the ampersand character
+*)
+Definition ampersand : ascii := ascii_of_nat 64.
+
+(**
+    String representation of the ampersand character    
+*)
+Definition ampersand_str : string := String ampersand EmptyString.
+
+(**
+    Ensure the ampersand character index is correct
+*)
+Goal ampersand_str = "@".
     reflexivity.
 Qed.
 

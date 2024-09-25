@@ -72,11 +72,53 @@
 </div>
 
 <div class="doc">
-    Ensure the character index is correct
+    String representation of the space character
 
 </div>
 <div class="code">
-<span class="id" title="keyword">Goal</span> <a id="Unnamed_thm" class="idref" href="#Unnamed_thm"><span class="id" title="definition">String</span></a> <a id="Unnamed_thm" class="idref" href="#Unnamed_thm"><span class="id" title="definition">space</span></a> <a id="Unnamed_thm" class="idref" href="#Unnamed_thm"><span class="id" title="definition">EmptyString</span></a> <a id="Unnamed_thm" class="idref" href="#Unnamed_thm"><span class="id" title="definition">=</span></a> " ".<br/>
+<span class="id" title="keyword">Definition</span> <a id="space_str" class="idref" href="#space_str"><span class="id" title="definition">space_str</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a> := <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#String"><span class="id" title="constructor">String</span></a> <a class="idref" href="Proofchat.theories.StringTheory.html#space"><span class="id" title="definition">space</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#EmptyString"><span class="id" title="constructor">EmptyString</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+    Ensure the space character index is correct
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Goal</span> <a id="Unnamed_thm" class="idref" href="#Unnamed_thm"><span class="id" title="definition">space_str</span></a> <a id="Unnamed_thm" class="idref" href="#Unnamed_thm"><span class="id" title="definition">=</span></a> " ".<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">reflexivity</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+    Standard ASCII representation of the ampersand character
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="ampersand" class="idref" href="#ampersand"><span class="id" title="definition">ampersand</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.Ascii.html#ascii"><span class="id" title="inductive">ascii</span></a> := <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.Ascii.html#ascii_of_nat"><span class="id" title="definition">ascii_of_nat</span></a> 64.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+    String representation of the ampersand character    
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="ampersand_str" class="idref" href="#ampersand_str"><span class="id" title="definition">ampersand_str</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a> := <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#String"><span class="id" title="constructor">String</span></a> <a class="idref" href="Proofchat.theories.StringTheory.html#ampersand"><span class="id" title="definition">ampersand</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Strings.String.html#EmptyString"><span class="id" title="constructor">EmptyString</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+    Ensure the ampersand character index is correct
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Goal</span> <a id="Unnamed_thm0" class="idref" href="#Unnamed_thm0"><span class="id" title="definition">ampersand_str</span></a> <a id="Unnamed_thm0" class="idref" href="#Unnamed_thm0"><span class="id" title="definition">=</span></a> "@".<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">reflexivity</span>.<br/>
 <span class="id" title="keyword">Qed</span>.<br/>
 

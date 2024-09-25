@@ -17,7 +17,7 @@ Extraction Language OCaml.
 Unset Extraction Optimize.
 
 (** ** Functions *)
-Extract Inlined Constant read_line => "read_line".
+Extract Inlined Constant read_line => "(fun _ -> SomeE (read_line ()))".
 Extract Inlined Constant print_int => "(fun i -> print_int i; flush stdout)".
 Extract Inlined Constant print_string => "(fun s -> print_string s; flush stdout)".
 Extract Constant print_bytes => "(fun b -> print_bytes (Proofchat.Pfbytes.bytes_of_char_list b))".

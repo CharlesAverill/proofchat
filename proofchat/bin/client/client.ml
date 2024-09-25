@@ -14,6 +14,22 @@ let app x =
     | a :: l1 -> a :: (app0 l1 m)
   in app0 x
 
+(** val add : nat -> nat -> nat **)
+
+let rec add n0 m =
+  match n0 with
+  | O -> m
+  | S p -> S (add p m)
+
+(** val sub : nat -> nat -> nat **)
+
+let rec sub n0 m =
+  match n0 with
+  | O -> n0
+  | S k -> (match m with
+            | O -> n0
+            | S l -> sub k l)
+
 type positive =
 | XI of positive
 | XO of positive
@@ -44,6 +60,21 @@ module Pos =
   | XO p -> XI (pred_double p)
   | XH -> XH
 
+  (** val iter_op : ('a1 -> 'a1 -> 'a1) -> positive -> 'a1 -> 'a1 **)
+
+  let iter_op op =
+    let rec iter p a =
+      match p with
+      | XI p0 -> op a (iter p0 (op a a))
+      | XO p0 -> iter p0 (op a a)
+      | XH -> a
+    in iter
+
+  (** val to_nat : positive -> nat **)
+
+  let to_nat x =
+    iter_op add x (S O)
+
   (** val of_succ_nat : nat -> positive **)
 
   let rec of_succ_nat = function
@@ -58,6 +89,53 @@ module N =
   let of_nat = function
   | O -> N0
   | S n' -> Npos (Pos.of_succ_nat n')
+ end
+
+(** val rev : 'a1 list -> 'a1 list **)
+
+let rev l =
+  let rec rev0 = function
+  | [] -> []
+  | x :: l' -> app (rev0 l') (x :: [])
+  in rev0 l
+
+(** val map : ('a1 -> 'a2) -> 'a1 list -> 'a2 list **)
+
+let map f =
+  let rec map0 = function
+  | [] -> []
+  | a :: t -> (f a) :: (map0 t)
+  in map0
+
+module Z =
+ struct
+  (** val double : z -> z **)
+
+  let double = function
+  | Z0 -> Z0
+  | Zpos p -> Zpos (XO p)
+  | Zneg p -> Zneg (XO p)
+
+  (** val succ_double : z -> z **)
+
+  let succ_double = function
+  | Z0 -> Zpos XH
+  | Zpos p -> Zpos (XI p)
+  | Zneg p -> Zneg (Pos.pred_double p)
+
+  (** val opp : z -> z **)
+
+  let opp = function
+  | Z0 -> Z0
+  | Zpos x0 -> Zneg x0
+  | Zneg x0 -> Zpos x0
+
+  (** val to_nat : z -> nat **)
+
+  let to_nat = function
+  | Z0 -> O
+  | Zpos p -> Pos.to_nat p
+  | Zneg _ -> O
  end
 
 (** val zero : char **)
@@ -98,45 +176,102 @@ let ascii_of_nat a =
 
 
 
-(** val rev : 'a1 list -> 'a1 list **)
+(** val get : nat -> string -> char option **)
 
-let rev l =
-  let rec rev0 = function
-  | [] -> []
-  | x :: l' -> app (rev0 l') (x :: [])
-  in rev0 l
+let rec get n0 s =
+  (* If this appears, you're using String internals. Please don't *)
+ (fun f0 f1 s ->
+    let l = String.length s in
+    if l = 0 then f0 () else f1 (String.get s 0) (String.sub s 1 (l-1)))
 
-(** val map : ('a1 -> 'a2) -> 'a1 list -> 'a2 list **)
+    (fun _ -> None)
+    (fun c s' -> match n0 with
+                 | O -> Some c
+                 | S n' -> get n' s')
+    s
 
-let map f =
-  let rec map0 = function
-  | [] -> []
-  | a :: t -> (f a) :: (map0 t)
-  in map0
+(** val substring : nat -> nat -> string -> string **)
 
-module Z =
- struct
-  (** val double : z -> z **)
+let rec substring n0 m s =
+  match n0 with
+  | O ->
+    (match m with
+     | O -> ""
+     | S m' ->
+       ((* If this appears, you're using String internals. Please don't *)
+ (fun f0 f1 s ->
+    let l = String.length s in
+    if l = 0 then f0 () else f1 (String.get s 0) (String.sub s 1 (l-1)))
 
-  let double = function
-  | Z0 -> Z0
-  | Zpos p -> Zpos (XO p)
-  | Zneg p -> Zneg (XO p)
+          (fun _ -> s)
+          (fun c s' ->
+          (* If this appears, you're using String internals. Please don't *)
+  (fun (c, s) -> String.make 1 c ^ s)
 
-  (** val succ_double : z -> z **)
+          (c, (substring O m' s')))
+          s))
+  | S n' ->
+    ((* If this appears, you're using String internals. Please don't *)
+ (fun f0 f1 s ->
+    let l = String.length s in
+    if l = 0 then f0 () else f1 (String.get s 0) (String.sub s 1 (l-1)))
 
-  let succ_double = function
-  | Z0 -> Zpos XH
-  | Zpos p -> Zpos (XI p)
-  | Zneg p -> Zneg (Pos.pred_double p)
+       (fun _ -> s)
+       (fun _ s' -> substring n' m s')
+       s)
 
-  (** val opp : z -> z **)
+(** val index : nat -> string -> string -> nat option **)
 
-  let opp = function
-  | Z0 -> Z0
-  | Zpos x0 -> Zneg x0
-  | Zneg x0 -> Zpos x0
- end
+let rec index n0 s1 s2 =
+  (* If this appears, you're using String internals. Please don't *)
+ (fun f0 f1 s ->
+    let l = String.length s in
+    if l = 0 then f0 () else f1 (String.get s 0) (String.sub s 1 (l-1)))
+
+    (fun _ ->
+    match n0 with
+    | O ->
+      ((* If this appears, you're using String internals. Please don't *)
+ (fun f0 f1 s ->
+    let l = String.length s in
+    if l = 0 then f0 () else f1 (String.get s 0) (String.sub s 1 (l-1)))
+
+         (fun _ -> Some O)
+         (fun _ _ -> None)
+         s1)
+    | S _ -> None)
+    (fun _ s2' ->
+    match n0 with
+    | O ->
+      if (fun s1 s2 ->
+     let l1 = String.length s1 and l2 = String.length s2 in
+     l1 <= l2 && String.sub s2 0 l1 = s1)
+           s1 s2
+      then Some O
+      else (match index O s1 s2' with
+            | Some n1 -> Some (S n1)
+            | None -> None)
+    | S n' ->
+      (match index n' s1 s2' with
+       | Some n1 -> Some (S n1)
+       | None -> None))
+    s2
+
+type 'x optionE =
+| SomeE of 'x
+| NoneE of string
+
+(** val strip_options : 'a1 optionE list -> 'a1 list optionE **)
+
+let rec strip_options = function
+| [] -> SomeE []
+| o :: t ->
+  (match o with
+   | SomeE a ->
+     (match strip_options t with
+      | SomeE t' -> SomeE (a :: t')
+      | NoneE err -> NoneE err)
+   | NoneE s -> NoneE ((^) "strip_options fail: " s))
 
 (** val lsr0 : Uint63.t -> Uint63.t -> Uint63.t **)
 
@@ -146,13 +281,13 @@ let lsr0 = Uint63.l_sr
 
 let land0 = Uint63.l_and
 
-(** val add : Uint63.t -> Uint63.t -> Uint63.t **)
+(** val add0 : Uint63.t -> Uint63.t -> Uint63.t **)
 
-let add = Uint63.add
+let add0 = Uint63.add
 
-(** val sub : Uint63.t -> Uint63.t -> Uint63.t **)
+(** val sub0 : Uint63.t -> Uint63.t -> Uint63.t **)
 
-let sub = Uint63.sub
+let sub0 = Uint63.sub
 
 (** val mul : Uint63.t -> Uint63.t -> Uint63.t **)
 
@@ -195,7 +330,7 @@ let is_even i =
 (** val opp0 : Uint63.t -> Uint63.t **)
 
 let opp0 i =
-  sub (Uint63.of_int (0)) i
+  sub0 (Uint63.of_int (0)) i
 
 (** val to_Z_rec : nat -> Uint63.t -> z **)
 
@@ -226,22 +361,6 @@ let max_int =
 let to_Z0 i =
   if ltb i min_int then to_Z i else Z.opp (to_Z (opp0 i))
 
-type 'x optionE =
-| SomeE of 'x
-| NoneE of string
-
-(** val strip_options : 'a1 optionE list -> 'a1 list optionE **)
-
-let rec strip_options = function
-| [] -> SomeE []
-| o :: t ->
-  (match o with
-   | SomeE a ->
-     (match strip_options t with
-      | SomeE t' -> SomeE (a :: t')
-      | NoneE err -> NoneE err)
-   | NoneE s -> NoneE ((^) "strip_options fail: " s))
-
 type bytes = char list
 
 (** val send :
@@ -259,8 +378,8 @@ let recv = Proofchat.Pfbytes.functional_read
 (** val sub1_no_underflow : Uint63.t -> bool **)
 
 let sub1_no_underflow n0 =
-  (&&) (lesb (Uint63.of_int (0)) (sub n0 (Uint63.of_int (1))))
-    (ltsb (sub n0 (Uint63.of_int (1))) n0)
+  (&&) (lesb (Uint63.of_int (0)) (sub0 n0 (Uint63.of_int (1))))
+    (ltsb (sub0 n0 (Uint63.of_int (1))) n0)
 
 type repeat_until_timeout_code =
 | Recurse
@@ -279,7 +398,7 @@ let repeat_until_timeout x x0 =
                (fun _ ->
                  (match x1 with
                   | Recurse ->
-                    (fun _ _ -> hrec (sub timeout (Uint63.of_int (1))) f __)
+                    (fun _ _ -> hrec (sub0 timeout (Uint63.of_int (1))) f __)
                   | EarlyStopSuccess -> (fun _ _ -> SomeE ())
                   | EarlyStopFailure s -> (fun _ _ -> NoneE s)) __ __)
              | NoneE s -> (fun _ -> NoneE s)) __)
@@ -291,6 +410,22 @@ let repeat_until_timeout x x0 =
 let space =
   ascii_of_nat (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S
     (S (S (S (S (S (S (S (S (S (S (S O))))))))))))))))))))))))))))))))
+
+(** val space_str : string **)
+
+let space_str =
+  (* If this appears, you're using String internals. Please don't *)
+  (fun (c, s) -> String.make 1 c ^ s)
+
+    (space, "")
+
+(** val ampersand : char **)
+
+let ampersand =
+  ascii_of_nat (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S
+    (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S
+    (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S
+    O))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
 
 (** val no_spaces : string -> bool **)
 
@@ -317,7 +452,7 @@ let rec int_len_list = function
 | [] -> (Uint63.of_int (0))
 | _ :: t ->
   let n0 = int_len_list t in
-  if ltsb n0 max_int then add (Uint63.of_int (1)) n0 else max_int
+  if ltsb n0 max_int then add0 (Uint63.of_int (1)) n0 else max_int
 
 (** val bytes_of_string : string -> bytes **)
 
@@ -351,14 +486,14 @@ let int_len_string s =
 let create_list x0 x1 =
   let rec hrec _ x n0 _ =
     (if sub1_no_underflow n0
-     then (fun _ -> x :: (hrec __ x (sub n0 (Uint63.of_int (1))) __))
+     then (fun _ -> x :: (hrec __ x (sub0 n0 (Uint63.of_int (1))) __))
      else (fun _ -> [])) __
   in hrec __ x0 x1 __
 
 (** val pad_string_r : string -> char -> Uint63.t -> string **)
 
 let pad_string_r s b target_len =
-  (^) s (string_of_bytes (create_list b (sub target_len (int_len_string s))))
+  (^) s (string_of_bytes (create_list b (sub0 target_len (int_len_string s))))
 
 (** val first_n : 'a1 list -> Uint63.t -> 'a1 list optionE **)
 
@@ -368,7 +503,7 @@ let rec first_n l n0 =
     if eqb n0 (Uint63.of_int (0)) then SomeE [] else NoneE "first_n failure"
   | h :: t ->
     if lesb (Uint63.of_int (1)) n0
-    then (match first_n t (sub n0 (Uint63.of_int (1))) with
+    then (match first_n t (sub0 n0 (Uint63.of_int (1))) with
           | SomeE rec_answer -> SomeE (h :: rec_answer)
           | NoneE err -> NoneE err)
     else SomeE []
@@ -389,10 +524,10 @@ let divide x0 x1 x2 =
             (match first_n l size0 with
              | SomeE x ->
                (fun _ ->
-                 (match last_n l (sub (int_len_list l) size0) with
+                 (match last_n l (sub0 (int_len_list l) size0) with
                   | SomeE x3 ->
                     (fun _ ->
-                      (match hrec __ x3 size0 (sub n0 (Uint63.of_int (1))) __ with
+                      (match hrec __ x3 size0 (sub0 n0 (Uint63.of_int (1))) __ with
                        | SomeE x4 -> (fun _ _ -> SomeE (x :: x4))
                        | NoneE s -> (fun _ _ -> NoneE s)) __ __)
                   | NoneE s -> (fun _ -> NoneE s)) __)
@@ -508,13 +643,13 @@ let resend x x0 x1 x2 x3 =
     (if sub1_no_underflow fuel
      then (fun _ ->
             (if ltsb
-                  (add n_sent
-                    (send sockfd message n_sent (sub len_msg n_sent) []))
+                  (add0 n_sent
+                    (send sockfd message n_sent (sub0 len_msg n_sent) []))
                   len_msg
              then (fun _ ->
-                    hrec (sub fuel (Uint63.of_int (1)))
-                      (add n_sent
-                        (send sockfd message n_sent (sub len_msg n_sent) []))
+                    hrec (sub0 fuel (Uint63.of_int (1)))
+                      (add0 n_sent
+                        (send sockfd message n_sent (sub0 len_msg n_sent) []))
                       sockfd message len_msg __)
              else (fun _ -> SomeE ())) __)
      else (fun _ -> NoneE
@@ -1648,9 +1783,41 @@ let recv_server_message sockfd =
 let client_send_thread sockfd =
   repeat_until_timeout max_int (fun _ ->
     let () = (fun s -> print_string s; flush stdout) ">>> " in
-    let msg = read_line () in
-    (match send_message sockfd (serialize_client_message (MESG msg)) with
-     | SomeE _ -> SomeE Recurse
+    (match (fun _ -> SomeE (read_line ())) () with
+     | SomeE msg ->
+       let () = (fun s -> print_endline s; flush stdout) "read line" in
+       (match if ltsb (Uint63.of_int (1)) (int_len_string msg)
+              then let first_char =
+                     match get O msg with
+                     | Some a -> a
+                     | None -> space
+                   in
+                   if (=) first_char ampersand
+                   then let split_idx =
+                          match index O space_str msg with
+                          | Some n0 -> n0
+                          | None -> O
+                        in
+                        let msg_text =
+                          substring (add split_idx (S O))
+                            (sub (Z.to_nat (to_Z0 (int_len_string msg)))
+                              split_idx) msg
+                        in
+                        let uname_text =
+                          substring (S O) (sub split_idx (S O)) msg
+                        in
+                        (match new_username uname_text with
+                         | SomeE uname ->
+                           send_message sockfd
+                             (serialize_client_message (PMSG (msg_text,
+                               uname)))
+                         | NoneE err -> NoneE err)
+                   else send_message sockfd
+                          (serialize_client_message (MESG msg))
+              else SomeE () with
+        | SomeE _ -> SomeE Recurse
+        | NoneE s ->
+          let () = Proofchat.Logging._log Log_Error s in SomeE Recurse)
      | NoneE err -> NoneE err))
 
 (** val client_recv_thread : Unix.file_descr -> unit optionE **)
@@ -1668,7 +1835,10 @@ let client_recv_thread sockfd =
               ((^) uname ((^) ": " msg))
           in
           (fun s -> print_string s; flush stdout) ">>> "
-        | ERR _ -> ()
+        | ERR err ->
+          let () = (fun s -> print_endline s; flush stdout) "" in
+          let () = Proofchat.Logging._log Log_Error (string_of_error err) in
+          (fun s -> print_string s; flush stdout) ">>> "
       in
       SomeE Recurse
     | NoneE err -> NoneE err)
@@ -1680,51 +1850,54 @@ let client host portno =
     (fun s -> print_endline s; flush stdout)
       "Please enter a username (length 1-32, no spaces)"
   in
-  let username_string = read_line () in
-  (match new_username username_string with
-   | SomeE uname ->
-     let socket_fd =
-       Unix.socket Unix.PF_INET Unix.SOCK_STREAM (Uint63.of_int (0))
-     in
-     let socket_addr = Unix.ADDR_INET ((Unix.inet_addr_of_string host),
-       portno)
-     in
-     let () =
-       Proofchat.Logging._log Log_Debug
-         ((^) "Opening client connection to "
-           ((^) (string_of_socket_addr socket_addr)
-             ((^) " as " (string_of_socket_addr (Unix.getsockname socket_fd)))))
-     in
-     let () = Unix.connect socket_fd socket_addr in
-     (match send_message socket_fd (serialize_client_message (REG uname)) with
-      | SomeE _ ->
-        (match recv_server_message socket_fd with
-         | SomeE server_ack ->
-           (match match server_ack with
-                  | ACK (num_users, _) -> SomeE num_users
-                  | MSG (_, _) -> NoneE "Server denied connection"
-                  | ERR s -> NoneE (string_of_error s) with
-            | SomeE num_users ->
-              let () =
-                Proofchat.Logging._log Log_Info "Server accepted connection"
-              in
-              let () =
-                Proofchat.Logging._log Log_Info
-                  ((^) "Total users: " (string_of_int num_users))
-              in
-              (match (fun a b -> SomeE (Thread.create a b))
-                       client_send_thread socket_fd with
-               | SomeE input_thread ->
+  (match (fun _ -> SomeE (read_line ())) () with
+   | SomeE username_string ->
+     (match new_username username_string with
+      | SomeE uname ->
+        let socket_fd =
+          Unix.socket Unix.PF_INET Unix.SOCK_STREAM (Uint63.of_int (0))
+        in
+        let socket_addr = Unix.ADDR_INET ((Unix.inet_addr_of_string host),
+          portno)
+        in
+        let () =
+          Proofchat.Logging._log Log_Debug
+            ((^) "Opening client connection to "
+              ((^) (string_of_socket_addr socket_addr)
+                ((^) " as "
+                  (string_of_socket_addr (Unix.getsockname socket_fd)))))
+        in
+        let () = Unix.connect socket_fd socket_addr in
+        (match send_message socket_fd (serialize_client_message (REG uname)) with
+         | SomeE _ ->
+           (match recv_server_message socket_fd with
+            | SomeE server_ack ->
+              (match match server_ack with
+                     | ACK (num_users, _) -> SomeE num_users
+                     | MSG (_, _) -> NoneE "Server denied connection"
+                     | ERR s -> NoneE (string_of_error s) with
+               | SomeE num_users ->
+                 let () =
+                   Proofchat.Logging._log Log_Info
+                     "Server accepted connection"
+                 in
+                 let () =
+                   Proofchat.Logging._log Log_Info
+                     ((^) "Total users: " (string_of_int num_users))
+                 in
                  (match (fun a b -> SomeE (Thread.create a b))
-                          client_recv_thread socket_fd with
-                  | SomeE recv_thread ->
-                    let () = Thread.join input_thread in
-                    let () = Thread.join recv_thread in
-                    let () =
-                      Proofchat.Logging._log Log_Info
-                        "Closing connection to server"
-                    in
-                    let () = Unix.close socket_fd in SomeE ()
+                          client_send_thread socket_fd with
+                  | SomeE input_thread ->
+                    (match (fun a b -> SomeE (Thread.create a b))
+                             client_recv_thread socket_fd with
+                     | SomeE _ ->
+                       let () = Thread.join input_thread in
+                       let () =
+                         Proofchat.Logging._log Log_Info
+                           "Closing connection to server"
+                       in
+                       let () = Unix.close socket_fd in SomeE ()
+                     | NoneE err -> NoneE err)
                   | NoneE err -> NoneE err)
                | NoneE err -> NoneE err)
             | NoneE err -> NoneE err)
