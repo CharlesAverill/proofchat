@@ -26,6 +26,16 @@ Axiom remove_connection : client_connection -> unit.
 Axiom get_connection : username -> option client_connection.
 Axiom get_connection_list : unit -> list client_connection.
 
+Definition server_username : username.
+    assert (validate_username "SERVER" = true) by reflexivity.
+    apply validate_username_correct in H.
+    destruct H.
+    exact {| 
+        Uname := "SERVER"; 
+        ValidLength := H; 
+        NoSpaces := H0 |}.
+Defined.
+
 Definition server_client_communication (uname : username) (cc : client_connection) : optionE unit :=
     (* Add the new connection *)
     let* _ <= log Log_Info (uname.(Uname) ++ " has joined") #;
@@ -67,14 +77,24 @@ Definition server_client_communication (uname : username) (cc : client_connectio
                         (serialize_server_message (ERR PmsgTargetNotExists)) ;;
                     fail "PmsgTargetNotExists"
                 end ;;
-            send_message target_cc.(cc_descr)
-                    (serialize_server_message (MSG cc.(cc_uname) ("[PM] " ++ msg))))
+            _ <- send_message target_cc.(cc_descr)
+                    (serialize_server_message (MSG cc.(cc_uname) ("[PM] " ++ msg))) ;;
+            return log Log_Info (cc.(cc_uname).(Uname) ++ ": " ++ "[PM] " ++ msg))
             with
             | SomeE _ => return Recurse
             | NoneE s =>
                 let* _ <= log Log_Error s #;
                 return Recurse
             end
+        | EXIT _uname =>
+            let* _ <= remove_connection cc #;
+            _ <- SomeE (List.map
+                (fun cc => send_message cc.(cc_descr) (serialize_server_message 
+                    (MSG server_username 
+                    (uname.(Uname) ++ " has left"))))
+                (get_connection_list tt)) ;;
+            let* _ <= log Log_Info (uname.(Uname) ++ " has left") #;
+            return EarlyStopSuccess
         | _ => return EarlyStopFailure ("unrecognized message") 
         end
     ).
@@ -89,7 +109,11 @@ Definition init_client_comms (cc : client_connection) : optionE unit :=
         match get_connection uname with
         (* Username is not taken *)
         | None =>
-            server_client_communication uname cc
+            if (uname =? server_username) then
+                send_message cc.(cc_descr)
+                    (serialize_server_message (ERR UsernameTaken))
+            else
+                server_client_communication uname cc
         (* Username is taken *)
         | Some _ =>
             let* _ <= log Log_Error (uname.(Uname) ++ 
@@ -146,7 +170,6 @@ Definition server (host : string) (portno : port) : optionE unit :=
     let* _ <= log Log_Info "Server started" #;
     accept_thread <- create file_descr (optionE unit) server_accept_thread socket_fd ;;
     control_thread <- create unit (optionE unit) server_control_thread tt ;;
-    (* _ <- join accept_thread ;; *)
     let* _ <= join control_thread #;
     let* _ <= log Log_Info "Closing server" #;
     let* _ <= close socket_fd #;

@@ -224,7 +224,7 @@ val recv_server_ERR : Unix.file_descr -> server_message optionE
 
 val recv_server_message : Unix.file_descr -> server_message optionE
 
-val client_send_thread : Unix.file_descr -> unit optionE
+val client_send_thread : (username * Unix.file_descr) -> unit optionE
 
 val client_recv_thread : Unix.file_descr -> unit optionE
 

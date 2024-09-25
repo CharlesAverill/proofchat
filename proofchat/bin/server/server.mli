@@ -166,6 +166,8 @@ val cc_descr : Proofchat.Serverstate.client_connection -> Unix.file_descr
 
 val cc_addr : Proofchat.Serverstate.client_connection -> Unix.sockaddr
 
+val server_username : username
+
 val server_client_communication :
   username -> Proofchat.Serverstate.client_connection -> unit optionE
 

@@ -13,14 +13,18 @@ Open Scope sint63_scope.
 (**
     The internal loop of our client sending thread
 *)
-Definition client_send_thread (sockfd : file_descr) : optionE unit :=
+Definition client_send_thread (uname_sockfd : username * file_descr) : optionE unit :=
+    let '(uname, sockfd) := uname_sockfd in 
     repeat_until_timeout max_int (fun _ => 
         let* _ <= print_string ">>> " #;
         msg <- read_line tt ;;
-        let* _ <= print_endline "read line" #;
         match ((if (1 <? int_len_string msg) then
+            (* Check if exiting *)
+            if (msg =? "!exit")%string then
+                _ <- send_message sockfd (serialize_client_message (EXIT uname)) ;;
+                return exit tt
             (* Check if a private message *)
-            let first_char := match get 0 msg with
+            else let first_char := match get 0 msg with
                               | Some a => a
                               (* Not possible *)
                               | None => space
@@ -97,7 +101,7 @@ Definition client (host : string) (portno : port) : optionE unit :=
     (* Display chatroom information to user output *)
     let* _ <= log Log_Info ("Total users: " ++ (string_of_int num_users)) #;
     (* Get user input *)
-    input_thread <- create file_descr (optionE unit) client_send_thread socket_fd ;;
+    input_thread <- create (username *file_descr) (optionE unit) client_send_thread (uname, socket_fd) ;;
     (* Display server messages *)
     recv_thread <- create file_descr (optionE unit) client_recv_thread socket_fd ;;
     let* _ <= join input_thread #;

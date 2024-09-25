@@ -1778,42 +1778,47 @@ let recv_server_message sockfd =
               (string_of_bytes code))))
   | NoneE err -> NoneE err
 
-(** val client_send_thread : Unix.file_descr -> unit optionE **)
+(** val client_send_thread : (username * Unix.file_descr) -> unit optionE **)
 
-let client_send_thread sockfd =
+let client_send_thread = function
+| (uname, sockfd) ->
   repeat_until_timeout max_int (fun _ ->
     let () = (fun s -> print_string s; flush stdout) ">>> " in
     (match (fun _ -> SomeE (read_line ())) () with
      | SomeE msg ->
-       let () = (fun s -> print_endline s; flush stdout) "read line" in
        (match if ltsb (Uint63.of_int (1)) (int_len_string msg)
-              then let first_char =
-                     match get O msg with
-                     | Some a -> a
-                     | None -> space
-                   in
-                   if (=) first_char ampersand
-                   then let split_idx =
-                          match index O space_str msg with
-                          | Some n0 -> n0
-                          | None -> O
-                        in
-                        let msg_text =
-                          substring (add split_idx (S O))
-                            (sub (Z.to_nat (to_Z0 (int_len_string msg)))
-                              split_idx) msg
-                        in
-                        let uname_text =
-                          substring (S O) (sub split_idx (S O)) msg
-                        in
-                        (match new_username uname_text with
-                         | SomeE uname ->
-                           send_message sockfd
-                             (serialize_client_message (PMSG (msg_text,
-                               uname)))
+              then if (=) msg "!exit"
+                   then (match send_message sockfd
+                                 (serialize_client_message (EXIT uname)) with
+                         | SomeE _ -> SomeE (Thread.exit ())
                          | NoneE err -> NoneE err)
-                   else send_message sockfd
-                          (serialize_client_message (MESG msg))
+                   else let first_char =
+                          match get O msg with
+                          | Some a -> a
+                          | None -> space
+                        in
+                        if (=) first_char ampersand
+                        then let split_idx =
+                               match index O space_str msg with
+                               | Some n0 -> n0
+                               | None -> O
+                             in
+                             let msg_text =
+                               substring (add split_idx (S O))
+                                 (sub (Z.to_nat (to_Z0 (int_len_string msg)))
+                                   split_idx) msg
+                             in
+                             let uname_text =
+                               substring (S O) (sub split_idx (S O)) msg
+                             in
+                             (match new_username uname_text with
+                              | SomeE uname0 ->
+                                send_message sockfd
+                                  (serialize_client_message (PMSG (msg_text,
+                                    uname0)))
+                              | NoneE err -> NoneE err)
+                        else send_message sockfd
+                               (serialize_client_message (MESG msg))
               else SomeE () with
         | SomeE _ -> SomeE Recurse
         | NoneE s ->
@@ -1886,7 +1891,7 @@ let client host portno =
                      ((^) "Total users: " (string_of_int num_users))
                  in
                  (match (fun a b -> SomeE (Thread.create a b))
-                          client_send_thread socket_fd with
+                          client_send_thread (uname, socket_fd) with
                   | SomeE input_thread ->
                     (match (fun a b -> SomeE (Thread.create a b))
                              client_recv_thread socket_fd with

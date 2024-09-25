@@ -1497,6 +1497,11 @@ let cc_descr = function
 let cc_addr = function
 | (_, _, cc_addr0) -> cc_addr0
 
+(** val server_username : username **)
+
+let server_username =
+  "SERVER"
+
 (** val server_client_communication :
     username -> Proofchat.Serverstate.client_connection -> unit optionE **)
 
@@ -1548,14 +1553,32 @@ let server_client_communication uname cc =
                                | SomeE _ -> NoneE "PmsgTargetNotExists"
                                | NoneE err -> NoneE err)) with
                    | SomeE target_cc ->
-                     send_message (cc_descr target_cc)
-                       (serialize_server_message (MSG ((cc_uname cc0),
-                         ((^) "[PM] " msg))))
+                     (match send_message (cc_descr target_cc)
+                              (serialize_server_message (MSG ((cc_uname cc0),
+                                ((^) "[PM] " msg)))) with
+                      | SomeE _ ->
+                        SomeE
+                          (Proofchat.Logging._log Log_Info
+                            ((^) (cc_uname cc0) ((^) ": " ((^) "[PM] " msg))))
+                      | NoneE err -> NoneE err)
                    | NoneE err -> NoneE err with
              | SomeE _ -> SomeE Recurse
              | NoneE s ->
                let () = Proofchat.Logging._log Log_Error s in SomeE Recurse)
-          | EXIT _ -> SomeE (EarlyStopFailure "unrecognized message"))
+          | EXIT _ ->
+            let () = Proofchat.Serverstate.remove_connection cc0 in
+            (match SomeE
+             (map (fun cc1 ->
+               send_message (cc_descr cc1)
+                 (serialize_server_message (MSG (server_username,
+                   ((^) uname " has left")))))
+               (Proofchat.Serverstate.get_connection_list ())) with
+             | SomeE _ ->
+               let () =
+                 Proofchat.Logging._log Log_Info ((^) uname " has left")
+               in
+               SomeE EarlyStopSuccess
+             | NoneE err -> NoneE err))
        | NoneE err -> NoneE err)
    | NoneE err -> NoneE err)
 
@@ -1578,7 +1601,11 @@ let init_client_comms cc =
                     (serialize_server_message (ERR UsernameTaken)) with
             | SomeE _ -> SomeE ()
             | NoneE err -> NoneE err)
-         | None -> server_client_communication uname cc)
+         | None ->
+           if eqb uname server_username
+           then send_message (cc_descr cc)
+                  (serialize_server_message (ERR UsernameTaken))
+           else server_client_communication uname cc)
       | MESG _ ->
         let () =
           Proofchat.Logging._log Log_Error
