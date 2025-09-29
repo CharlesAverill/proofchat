@@ -13,7 +13,7 @@ Open Scope sint63_scope.
 (**
     The internal loop of our client sending thread
 *)
-Definition client_send_thread (uname_sockfd : username * file_descr) : optionE unit :=
+Definition client_send_thread (uname_sockfd : username * file_descr) : result unit :=
     let '(uname, sockfd) := uname_sockfd in 
     repeat_until_timeout max_int (fun _ => 
         let* _ <= print_string ">>> " #;
@@ -46,18 +46,18 @@ Definition client_send_thread (uname_sockfd : username * file_descr) : optionE u
                 send_message sockfd (serialize_client_message 
                     (MESG msg))
         else
-            SomeE tt)) with
-        | SomeE _ => SomeE Recurse
-        | NoneE s => 
+            Ok tt)) with
+        | Ok _ => Ok Recurse
+        | Error s => 
             let* _ <= log Log_Error s #;
-            SomeE Recurse
+            Ok Recurse
         end
     ).
 
 (**
     The internal loop of our client receiving thread
 *)
-Definition client_recv_thread (sockfd : file_descr) : optionE unit :=
+Definition client_recv_thread (sockfd : file_descr) : result unit :=
     repeat_until_timeout max_int (fun _ => 
         server_msg <- recv_server_message sockfd ;;
         let* _ <= (match server_msg with
@@ -70,13 +70,13 @@ Definition client_recv_thread (sockfd : file_descr) : optionE unit :=
             print_string ">>> "
         | _ => tt
         end) #;
-        SomeE Recurse
+        Ok Recurse
     ).
 
 (**
     Wraps up all client logic: port binding, threading, etc.
 *)
-Definition client (host : string) (portno : port) : optionE unit :=
+Definition client (host : string) (portno : port) : result unit :=
     (* Obtain username from user *)
     let* _ <= print_endline "Please enter a username (length 1-32, no spaces)" #;
     username_string <- read_line tt ;;
@@ -101,9 +101,9 @@ Definition client (host : string) (portno : port) : optionE unit :=
     (* Display chatroom information to user output *)
     let* _ <= log Log_Info ("Total users: " ++ (string_of_int num_users)) #;
     (* Get user input *)
-    input_thread <- create (username *file_descr) (optionE unit) client_send_thread (uname, socket_fd) ;;
+    input_thread <- create (username *file_descr) (result unit) client_send_thread (uname, socket_fd) ;;
     (* Display server messages *)
-    recv_thread <- create file_descr (optionE unit) client_recv_thread socket_fd ;;
+    recv_thread <- create file_descr (result unit) client_recv_thread socket_fd ;;
     let* _ <= join input_thread #;
     (* let* _ <= join recv_thread #; *)
     let* _ <= log Log_Info "Closing connection to server" #;

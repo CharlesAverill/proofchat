@@ -25,7 +25,7 @@ Require Export Unix.
 Require Export Monads.
 
 (** Functions *)
-Axiom read_line : unit -> optionE string.
+Axiom read_line : unit -> result string.
 Axiom print_string : string -> unit.
 Axiom print_bytes : bytes -> unit.
 Axiom print_int : int -> unit.
@@ -43,7 +43,7 @@ Axiom sleep : int -> unit.
 Axiom inet_addr_of_string : string -> inet_addr.
 Axiom string_of_inet_addr : inet_addr -> string.
 Axiom getsockname : file_descr -> sockaddr.
-Axiom create : forall (X Y : Type), (X -> Y) -> X -> optionE thread.
+Axiom create : forall (X Y : Type), (X -> Y) -> X -> result thread.
 Axiom join : thread -> unit.
 Axiom exit : unit -> unit.
 
@@ -111,11 +111,11 @@ Inductive repeat_until_timeout_code : Type :=
 | Recurse | EarlyStopSuccess | EarlyStopFailure (s : string).
 
 (** 
-    Calls a function f until either it terminates with SomeE tt,
+    Calls a function f until either it terminates with Ok tt,
     or timeout occurs
 *)
-Function repeat_until_timeout (timeout : int) (f : unit -> optionE repeat_until_timeout_code)
-        {measure (fun x => (Z.to_nat (to_Z x))) timeout} : optionE unit :=
+Function repeat_until_timeout (timeout : int) (f : unit -> result repeat_until_timeout_code)
+        {measure (fun x => (Z.to_nat (to_Z x))) timeout} : result unit :=
     (if sub1_no_underflow timeout then
         f_tt_result <- f tt ;;
         match f_tt_result with
@@ -124,6 +124,6 @@ Function repeat_until_timeout (timeout : int) (f : unit -> optionE repeat_until_
         | EarlyStopFailure err => fail err
         end
     else
-        NoneE "Timeout occurred")%sint63.
+        Error "Timeout occurred")%sint63.
     prove_sub1.
 Defined.

@@ -71,6 +71,19 @@ Fixpoint no_spaces (s : string) : bool :=
     end.
 
 (**
+    Returns [true] if [s] contains no null characters
+*)
+Fixpoint no_nulls (s : string) : bool :=
+    match s with
+    | EmptyString => true
+    | String a s' =>
+        if (ascii_dec a (ascii_of_byte "000"%byte)) then
+            false
+        else
+            no_nulls s'
+    end.
+
+(**
     Prints a sockaddr
 *)
 Definition string_of_socket_addr (s : sockaddr) : string :=
@@ -134,25 +147,34 @@ Proof.
     - now rewrite byte_of_ascii_of_byte, IHb.
 Qed.
 
+Theorem bytes_of_string_app : forall (s1 s2 : string),
+  bytes_of_string (s1 ++ s2) = (bytes_of_string s1 ++ bytes_of_string s2)%list.
+Proof.
+  induction s1; intros; simpl in *.
+  - reflexivity.
+  - apply f_equal. apply IHs1.
+Qed.
+
 (** OCaml int string length *)
 Definition int_len_string (s : string) : int :=
     int_len_list (bytes_of_string s).
 
 (** Create a list of length [n] containing only [x] *)
-Function create_list {X : Type} (x : X) (n : int) 
-    {measure (fun x => (Z.to_nat (to_Z x))) n} : list X :=
-    (if sub1_no_underflow n then
-        x :: (create_list x (n - 1))
-    else
-        [])%sint63.
-    prove_sub1.
-Defined.
+Fixpoint create_list_nat {X : Type} (x : X) (n : nat) : list X :=
+  match n with
+  | O => []
+  | S n' => x :: create_list_nat x n'
+  end.
+
+Definition nat_of_int (i : int) : nat := Z.abs_nat (to_Z i).
+
+Definition create_list {X : Type} (x : X) (i : int) := create_list_nat x (nat_of_int i).
 
 Definition max (x y : int) : int :=
     if (y <? x)%sint63 then x else y.
 
-Theorem create_list_n : forall (X : Type) (x : X) (n : int),
-    int_len_list (create_list X x n) = max 0 n.
+(* Theorem create_list_n : forall (X : Type) (x : X) (n : nat),
+    int_len_list (create_list x n) = max 0 n.
 Proof.
     intros. unfold create_list.
     destruct (create_list_terminate).
@@ -161,11 +183,11 @@ Proof.
     specialize (H H0). clear H0.
     rewrite <- H with (def := create_list). simpl.
     unfold create_list_F. destruct (sub1_no_underflow n) eqn:E.
-Abort.
+Abort. *)
 
 (** Pad a string on the right with [b] until the entire string has length [target_len] *)
 Definition pad_string_r (s : string) (b : byte) (target_len : int) : string :=
-    s ++ (string_of_bytes (create_list byte b (target_len - int_len_string s))).
+    s ++ (string_of_bytes (create_list b (target_len - int_len_string s))).
 
 Theorem pad_string_r_len : forall (s : string) (b : byte) (n : int),
     int_len_string (pad_string_r s b n) = n.
@@ -193,9 +215,9 @@ Definition trim_null (b : bytes) : string :=
     trim_r (string_of_bytes b) "000"%byte.
 
 (** Get the first [n] elements of [l], or fail if not enough *)
-Fixpoint first_n {X : Type} (l : list X) (n : int) : optionE (list X) :=
+Fixpoint first_n {X : Type} (l : list X) (n : int) : result (list X) :=
     match l with
-    | [] => if (n =? 0)%sint63 then SomeE [] else NoneE "first_n failure"
+    | [] => if (n =? 0)%sint63 then Ok [] else Error "first_n failure"
     | h :: t => 
         if (1 <=? n)%sint63 then
             rec_answer <- first_n t (n - 1) ;;
@@ -205,13 +227,13 @@ Fixpoint first_n {X : Type} (l : list X) (n : int) : optionE (list X) :=
     end.
 
 (** Get the last [n] elements of [l], or fail if not enough *)
-Definition last_n {X : Type} (l : list X) (n : int) : optionE (list X) :=
+Definition last_n {X : Type} (l : list X) (n : int) : result (list X) :=
     aux <- first_n (rev l) n ;;
     return (rev aux).
 
 (** Split [l] into [n] lists of length [size], or fail if not enough elements *)
 Function divide {X : Type} (l : list X) (size n : int) 
-    {measure (fun x => (Z.to_nat (to_Z x))) n}: optionE (list (list X)) :=
+    {measure (fun x => (Z.to_nat (to_Z x))) n}: result (list (list X)) :=
     if sub1_no_underflow n then
         first <- first_n l size ;;
         last <- (last_n l (int_len_list l - size)) ;;
